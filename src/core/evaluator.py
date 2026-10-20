@@ -1,16 +1,16 @@
-from src.core.models import Placement, Problem, State, Vehicle, VehicleId
+from src.core.models import Orientation, Placement, Problem, State, Vehicle, VehicleId
 
 type Cell = tuple[int, int]
 
 
 def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
-    # TODO: Implementasikan penghitungan himpunan sel yang ditempati sebuah kendaraan.
-    #   Input: vehicle dan placement (x, y, orientation). Output: frozenset sel (x, y).
-    #   Konvensi: VERTICAL = lebar searah sumbu x dan panjang
-    #   searah sumbu y; HORIZONTAL = ditukar. (x, y) adalah sel kiri-atas footprint.
-    #   Footprint = semua (x + dx, y + dy) dengan 0 <= dx < extent_x dan 0 <= dy < extent_y.
-    #   Fungsi ini tidak memeriksa batas geladak; itu tugas is_valid.
-    raise NotImplementedError
+    if placement.orientation is Orientation.VERTICAL:
+        extent_x, extent_y = vehicle.width, vehicle.length
+    else:
+        extent_x, extent_y = vehicle.length, vehicle.width
+    return frozenset(
+        (placement.x + dx, placement.y + dy) for dx in range(extent_x) for dy in range(extent_y)
+    )
 
 
 def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
