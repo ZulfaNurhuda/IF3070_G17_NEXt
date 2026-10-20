@@ -16,4 +16,17 @@
 *.zip binary
 *.gz binary
 *.tar binary
-*.lock binary
+*.lockb binary
+
+# Lockfiles: generated text, collapsed in GitHub diffs, regenerate on conflict
+[attr]lockfile linguist-generated=true
+
+*.lock lockfile
+package-lock.json lockfile
+npm-shrinkwrap.json lockfile
+pnpm-lock.yaml lockfile
+packages.lock.json lockfile
+Package.resolved lockfile
+go.sum lockfile
+gradle.lockfile lockfile
+.terraform.lock.hcl lockfile
