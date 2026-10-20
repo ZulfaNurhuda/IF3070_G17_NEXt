@@ -11,11 +11,8 @@ def total_shipping_fee(state: State, problem: Problem) -> float:
 
 
 def urgency_weighted_fee(state: State, problem: Problem) -> float:
-    # TODO: Implementasikan objective alternatif (bonus 1) tanpa variabel baru.
-    #   Input: state dan problem. Output: jumlah shipping_fee / eta untuk semua kendaraan
-    #   terangkut, sehingga kendaraan dengan eta lebih dekat bernilai lebih besar.
-    #   Asumsi eta > 0; validasi dilakukan saat memuat instance (serialize.load_problem).
-    raise NotImplementedError
+    carried = loaded_vehicles(state, problem)
+    return sum((vehicle.shipping_fee / vehicle.eta for vehicle in carried), 0.0)
 
 
 OBJECTIVES: Final[dict[str, Objective]] = {
