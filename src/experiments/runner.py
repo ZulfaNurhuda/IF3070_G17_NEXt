@@ -1,3 +1,5 @@
+import random
+import time
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -22,23 +24,17 @@ class ExperimentResult:
     runs: tuple[RunRecord, ...]
 
 
-def run_experiment(
+def execute_runs(
     problem: Problem, algorithm_name: str, algorithm: Algorithm, runs: int, base_seed: int
 ) -> ExperimentResult:
-    # TODO: Implementasikan eksekusi satu eksperimen (satu konfigurasi, banyak run).
-    #   Input: problem, algorithm_name, algorithm, runs, base_seed. Output: ExperimentResult.
-    #   Langkah: untuk run ke-k (mulai 1) buat rng = random.Random(base_seed + k); ukur
-    #   durasi dengan time.perf_counter() di sekitar algorithm.run(problem, rng); simpan
-    #   RunRecord(run=k, seed=base_seed + k, duration_seconds, result).
-    #   created_at diisi datetime.now() sekali di awal eksperimen.
-    raise NotImplementedError
-
-
-def run_official_experiments(problem: Problem, base_seed: int) -> tuple[ExperimentResult, ...]:
-    # TODO: Implementasikan eksekusi seluruh eksperimen resmi (perintah run-all).
-    #   Input: problem dan base_seed. Output: satu ExperimentResult per ExperimentConfig di
-    #   configs.OFFICIAL_EXPERIMENTS, dengan urutan yang sama.
-    #   Langkah: untuk tiap config, buat algoritma lewat registry.create_algorithm(
-    #   config.algorithm, config.parameters, problem) lalu panggil run_experiment dengan
-    #   config.runs. Total 33 run (HC 4 x 3, SA 3, GA 6 konfigurasi x 3).
-    raise NotImplementedError
+    if runs < 1:
+        raise ValueError("runs harus minimal 1")
+    created_at = datetime.now()
+    records: list[RunRecord] = []
+    for run_number in range(1, runs + 1):
+        seed = base_seed + run_number
+        started = time.perf_counter()
+        result = algorithm.run(problem, random.Random(seed))
+        duration = time.perf_counter() - started
+        records.append(RunRecord(run_number, seed, duration, result))
+    return ExperimentResult(problem, algorithm_name, algorithm, created_at, tuple(records))
