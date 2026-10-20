@@ -3,8 +3,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
+from src.algorithms.base import HistoryRecord
 from src.core.evaluator import is_valid
-from src.core.models import Problem, Ship, State, Vehicle
+from src.core.models import Change, Placement, Problem, Ship, State, Vehicle
 from src.core.objectives import OBJECTIVES, total_shipping_fee
 from src.experiments.runner import ExperimentResult, RunRecord
 
@@ -166,12 +167,50 @@ def state_payload(state: State, problem: Problem) -> StatePayload:
     }
 
 
+def placement_payload(placement: Placement | None) -> PlacementPayload | None:
+    if placement is None:
+        return None
+    return {"x": placement.x, "y": placement.y, "orientation": placement.orientation.value}
+
+
+def change_payload(change: Change) -> ChangePayload:
+    return {
+        "id": change.vehicle_id,
+        "from": placement_payload(change.before),
+        "to": placement_payload(change.after),
+    }
+
+
+def history_entry(record: HistoryRecord) -> HistoryEntry:
+    entry: HistoryEntry = {"iteration": record.iteration, "value": record.value}
+    if record.acceptance_probability is not None:
+        entry["acceptance_probability"] = record.acceptance_probability
+    if record.maximum_value is not None:
+        entry["maximum_value"] = record.maximum_value
+    if record.average_value is not None:
+        entry["average_value"] = record.average_value
+    return entry
+
+
 def run_payload(record: RunRecord, problem: Problem) -> RunPayload:
-    # TODO: Implementasikan konversi RunRecord ke RunPayload.
-    #   Petakan HistoryRecord ke HistoryEntry (kunci opsional hanya bila nilainya bukan
-    #   None), Step ke StepPayload (Change menjadi {"id", "from", "to"}), dan result.extra
-    #   ke extra. duration_seconds dan seed diambil dari record.
-    raise NotImplementedError
+    result = record.result
+    return {
+        "run": record.run,
+        "seed": record.seed,
+        "duration_seconds": record.duration_seconds,
+        "iterations": result.iterations,
+        "initial_state": state_payload(result.initial_state, problem),
+        "final_state": state_payload(result.final_state, problem),
+        "history": [history_entry(entry) for entry in result.history],
+        "steps": [
+            {
+                "iteration": step.iteration,
+                "changes": [change_payload(change) for change in step.changes],
+            }
+            for step in result.steps
+        ],
+        "extra": {**result.extra, "evaluations": result.evaluations},
+    }
 
 
 def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
