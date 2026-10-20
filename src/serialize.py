@@ -3,8 +3,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
+from src.core.evaluator import is_valid
 from src.core.models import Problem, Ship, State, Vehicle
-from src.core.objectives import OBJECTIVES
+from src.core.objectives import OBJECTIVES, total_shipping_fee
 from src.experiments.runner import ExperimentResult, RunRecord
 
 
@@ -141,11 +142,28 @@ def load_problem(path: Path, objective_name: str) -> Problem:
 
 
 def state_payload(state: State, problem: Problem) -> StatePayload:
-    # TODO: Implementasikan konversi State ke StatePayload.
-    #   Output: placements berisi kendaraan terangkut (id, x, y, orientation), outside berisi
-    #   id kendaraan di luar kapal, value = problem.value(state), total_shipping_fee dihitung
-    #   dengan objective total-shipping-fee (selalu disimpan), valid = is_valid(state, problem).
-    raise NotImplementedError
+    placements: list[PlacedVehiclePayload] = []
+    outside: list[str] = []
+    for vehicle in problem.vehicles:
+        placement = state.placements[vehicle.id]
+        if placement is None:
+            outside.append(vehicle.id)
+        else:
+            placements.append(
+                {
+                    "id": vehicle.id,
+                    "x": placement.x,
+                    "y": placement.y,
+                    "orientation": placement.orientation.value,
+                }
+            )
+    return {
+        "placements": placements,
+        "outside": outside,
+        "value": problem.value(state),
+        "total_shipping_fee": total_shipping_fee(state, problem),
+        "valid": is_valid(state, problem),
+    }
 
 
 def run_payload(record: RunRecord, problem: Problem) -> RunPayload:
