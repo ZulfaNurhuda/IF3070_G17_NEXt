@@ -1,0 +1,43 @@
+from src.core.models import Placement, Problem, State, Vehicle, VehicleId
+
+type Cell = tuple[int, int]
+
+
+def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
+    # TODO: Implementasikan penghitungan himpunan sel yang ditempati sebuah kendaraan.
+    #   Input: vehicle dan placement (x, y, orientation). Output: frozenset sel (x, y).
+    #   Konvensi: VERTICAL = lebar searah sumbu x dan panjang
+    #   searah sumbu y; HORIZONTAL = ditukar. (x, y) adalah sel kiri-atas footprint.
+    #   Footprint = semua (x + dx, y + dy) dengan 0 <= dx < extent_x dan 0 <= dy < extent_y.
+    #   Fungsi ini tidak memeriksa batas geladak; itu tugas is_valid.
+    raise NotImplementedError
+
+
+def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
+    # TODO: Implementasikan daftar kendaraan yang terangkut pada state.
+    #   Input: state dan problem. Output: tuple Vehicle yang placement-nya bukan None,
+    #   dengan urutan sama seperti problem.vehicles.
+    #   Dipakai oleh objectives.py dan is_valid.
+    raise NotImplementedError
+
+
+def is_valid(state: State, problem: Problem) -> bool:
+    # TODO: Implementasikan pengecekan seluruh constraint pada state.
+    #   Input: state dan problem. Output: True hanya bila (1) tidak ada sel yang ditempati
+    #   lebih dari satu kendaraan, (2) setiap sel footprint berada dalam 0 <= x < ship.width
+    #   dan 0 <= y < ship.length, (3) total weight kendaraan terangkut <= ship.max_capacity.
+    #   Kendaraan di luar kapal (placement None) tidak diperiksa.
+    #   Ini satu-satunya tempat constraint dicek; neighbors, initial, dan crossover GA
+    #   memanggilnya.
+    raise NotImplementedError
+
+
+def try_place(
+    state: State, problem: Problem, vehicle_id: VehicleId, placement: Placement
+) -> State | None:
+    # TODO: Implementasikan penempatan kendaraan yang aman terhadap constraint.
+    #   Input: state, problem, vehicle_id, placement. Output: State baru dengan kendaraan itu
+    #   berada di placement, atau None bila hasilnya tidak lolos is_valid.
+    #   State asal tidak boleh berubah. Dipakai oleh initial.random_state dan crossover GA
+    #   (kendaraan yang gagal ditempatkan tetap di luar kapal).
+    raise NotImplementedError
