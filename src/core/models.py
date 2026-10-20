@@ -61,6 +61,16 @@ class State:
         #   Fungsi ini TIDAK memeriksa constraint (itu tugas evaluator.is_valid).
         raise NotImplementedError
 
+    def diff(self, other: State) -> Move:
+        # TODO: Implementasikan selisih dua State sebagai Move.
+        #   Input: other (State tujuan, memuat kendaraan yang sama dengan self).
+        #   Output: Move berisi satu Change(vehicle_id, before, after) untuk setiap kendaraan
+        #   yang placement-nya berbeda antara self dan other; Move kosong bila kedua state
+        #   sama. Urutkan berdasarkan vehicle_id agar hasilnya deterministik.
+        #   Invarian: self.apply(self.diff(other)) == other.
+        #   Dipakai GA untuk membentuk Step antar generasi (individu terbaik berganti).
+        raise NotImplementedError
+
 
 @dataclass(frozen=True, slots=True)
 class Problem:
