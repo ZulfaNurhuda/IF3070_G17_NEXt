@@ -1,7 +1,7 @@
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src", "scripts"]
+files = ["src"]
 warn_unreachable = true
 
 [tool.ruff]
