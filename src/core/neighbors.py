@@ -1,23 +1,67 @@
 import random
 from collections.abc import Iterator
+from itertools import chain, combinations
 from typing import Final
 
-from src.core.models import Move, Problem, State
+from src.core.evaluator import is_valid
+from src.core.models import Change, Move, Orientation, Placement, Problem, State
 
 MAX_RANDOM_NEIGHBOR_ATTEMPTS: Final = 100
 
 
+def flipped(orientation: Orientation) -> Orientation:
+    if orientation is Orientation.VERTICAL:
+        return Orientation.HORIZONTAL
+    return Orientation.VERTICAL
+
+
+def rotation_candidates(state: State, problem: Problem) -> Iterator[Move]:
+    for vehicle in problem.vehicles:
+        placement = state.placements[vehicle.id]
+        if placement is None or vehicle.width == vehicle.length:
+            continue
+        rotated = Placement(placement.x, placement.y, flipped(placement.orientation))
+        yield (Change(vehicle.id, placement, rotated),)
+
+
+def relocation_candidates(state: State, problem: Problem) -> Iterator[Move]:
+    ship = problem.ship
+    for vehicle in problem.vehicles:
+        current = state.placements[vehicle.id]
+        if current is None:
+            orientations = tuple(Orientation)
+        else:
+            orientations = (current.orientation,)
+            yield (Change(vehicle.id, current, None),)
+        for orientation in orientations:
+            for x in range(ship.width):
+                for y in range(ship.length):
+                    target = Placement(x, y, orientation)
+                    if target != current:
+                        yield (Change(vehicle.id, current, target),)
+
+
+def swap_candidates(state: State, problem: Problem) -> Iterator[Move]:
+    for first, second in combinations(problem.vehicles, 2):
+        first_placement = state.placements[first.id]
+        second_placement = state.placements[second.id]
+        if first_placement == second_placement:
+            continue
+        yield (
+            Change(first.id, first_placement, second_placement),
+            Change(second.id, second_placement, first_placement),
+        )
+
+
 def enumerate_neighbors(state: State, problem: Problem) -> Iterator[Move]:
-    # TODO: Implementasikan enumerasi seluruh neighbor valid dari `state`.
-    #   Input: state valid dan problem. Output: iterator Move; setiap Move bila di-apply
-    #   menghasilkan State yang lolos is_valid.
-    #   Langkah: (1) swap tiap pasangan kendaraan (dalam/luar kapal); (2) relocate tiap
-    #   kendaraan ke semua (x, y, orientation) valid serta ke "luar kapal"; (3) rotate
-    #   tiap kendaraan yang ada di dalam kapal.
-    #   Invarian: Move yang menyebabkan overlap, keluar geladak, atau melebihi kapasitas
-    #   tidak boleh di-yield. Move yang tidak mengubah apa pun juga tidak di-yield.
-    #   Dipakai oleh steepest-ascent, sideways-move, dan stochastic.
-    raise NotImplementedError
+    candidates = chain(
+        rotation_candidates(state, problem),
+        relocation_candidates(state, problem),
+        swap_candidates(state, problem),
+    )
+    for move in candidates:
+        if is_valid(state.apply(move), problem):
+            yield move
 
 
 def random_neighbor(
