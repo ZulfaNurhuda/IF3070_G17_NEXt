@@ -1,5 +1,5 @@
 import random
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from itertools import chain, combinations
 from typing import Final
 
@@ -64,17 +64,73 @@ def enumerate_neighbors(state: State, problem: Problem) -> Iterator[Move]:
             yield move
 
 
+type Sampler = Callable[[State, Problem, random.Random], Move | None]
+
+
+def sample_rotation(state: State, problem: Problem, rng: random.Random) -> Move | None:
+    if not problem.vehicles:
+        return None
+    vehicle = rng.choice(problem.vehicles)
+    placement = state.placements[vehicle.id]
+    if placement is None or vehicle.width == vehicle.length:
+        return None
+    rotated = Placement(placement.x, placement.y, flipped(placement.orientation))
+    return (Change(vehicle.id, placement, rotated),)
+
+
+def sample_relocation(state: State, problem: Problem, rng: random.Random) -> Move | None:
+    if not problem.vehicles:
+        return None
+    ship = problem.ship
+    vehicle = rng.choice(problem.vehicles)
+    current = state.placements[vehicle.id]
+    if current is None:
+        orientation = rng.choice(tuple(Orientation))
+    else:
+        orientation = current.orientation
+        if rng.randrange(ship.width * ship.length + 1) == 0:
+            return (Change(vehicle.id, current, None),)
+    target = Placement(rng.randrange(ship.width), rng.randrange(ship.length), orientation)
+    if target == current:
+        return None
+    return (Change(vehicle.id, current, target),)
+
+
+def sample_swap(state: State, problem: Problem, rng: random.Random) -> Move | None:
+    if len(problem.vehicles) < 2:
+        return None
+    first, second = rng.sample(problem.vehicles, 2)
+    first_placement = state.placements[first.id]
+    second_placement = state.placements[second.id]
+    if first_placement == second_placement:
+        return None
+    return (
+        Change(first.id, first_placement, second_placement),
+        Change(second.id, second_placement, first_placement),
+    )
+
+
+SAMPLERS: Final[tuple[Sampler, ...]] = (sample_rotation, sample_relocation, sample_swap)
+
+
 def random_neighbor(
     state: State,
     problem: Problem,
     rng: random.Random,
     max_attempts: int = MAX_RANDOM_NEIGHBOR_ATTEMPTS,
 ) -> Move | None:
-    # TODO: Implementasikan sampel acak satu neighbor valid.
-    #   Input: state, problem, rng, max_attempts. Output: sebuah Move valid, atau None bila
-    #   setelah max_attempts percobaan tidak ditemukan neighbor valid.
-    #   Langkah: pilih jenis move (swap, relocate, rotate) dan parameternya secara acak
-    #   lewat rng, bentuk Move, terima hanya bila is_valid(state.apply(move)); selain itu
-    #   ulangi. Dilarang memakai random global.
-    #   Dipakai oleh simulated-annealing dan mutasi GA.
-    raise NotImplementedError
+    vehicle_count = len(problem.vehicles)
+    if vehicle_count == 0:
+        return None
+    positions = problem.ship.width * problem.ship.length
+    weights = (
+        vehicle_count,
+        vehicle_count * (positions + 1),
+        vehicle_count * (vehicle_count - 1) // 2,
+    )
+    for _ in range(max_attempts):
+        sampler = rng.choices(SAMPLERS, weights=weights)[0]
+        move = sampler(state, problem, rng)
+        if move is not None and is_valid(state.apply(move), problem):
+            return move
+    return None
