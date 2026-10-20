@@ -1,0 +1,35 @@
+.axis {
+  stroke: var(--line-strong);
+}
+
+.gridline {
+  stroke: var(--grid);
+}
+
+.tick-label {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.series {
+  fill: none;
+  stroke-width: 2;
+}
+
+.series-main {
+  stroke: var(--accent);
+}
+
+.series-secondary {
+  stroke: var(--muted);
+  stroke-dasharray: 5 4;
+}
+
+.series-probability {
+  stroke: var(--probability);
+}
+
+.marker {
+  stroke: var(--accent);
+  stroke-dasharray: 3 3;
+}

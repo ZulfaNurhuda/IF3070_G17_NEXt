@@ -1,0 +1,31 @@
+select,
+button {
+  font: inherit;
+  font-size: 14px;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+select:hover,
+button:hover {
+  border-color: var(--line-strong);
+}
+
+button,
+summary {
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}

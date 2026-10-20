@@ -1,0 +1,51 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.push-right {
+  margin-left: auto;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  margin-top: 32px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.controls {
+  margin-top: 16px;
+}
+
+.details {
+  line-height: 2;
+  margin-top: 8px;
+}
+
+.charts {
+  margin-top: 40px;
+}
+
+.charts-secondary {
+  margin-top: 24px;
+}
+
+@media (max-width: 720px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

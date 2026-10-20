@@ -1,0 +1,24 @@
+.ship-frame {
+  fill: #fff;
+  stroke: var(--line-strong);
+}
+
+.ship-gridline {
+  stroke: var(--grid);
+}
+
+.vehicle-body {
+  fill: hsl(var(--hue) 70% 85%);
+  stroke: hsl(var(--hue) 50% 30%);
+  stroke-width: 1;
+}
+
+.vehicle.changed .vehicle-body {
+  stroke-width: 3;
+}
+
+.vehicle-label {
+  fill: hsl(var(--hue) 50% 20%);
+  text-anchor: middle;
+  dominant-baseline: central;
+}

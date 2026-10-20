@@ -4,33 +4,29 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NEXt Ship Loader</title>
-    <style>
-      body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 1000px; padding: 0 1rem; color: #222; background: #fff; }
-      .row { display: flex; align-items: center; gap: 12px; }
-      .layout { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 24px; }
-      .panel { display: flex; flex-direction: column; gap: 28px; }
-      .muted { color: #666; font-size: 14px; }
-      .big { font-size: 28px; font-weight: 500; }
-      svg { width: 100%; }
-    </style>
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/layout.css" />
+    <link rel="stylesheet" href="./styles/controls.css" />
+    <link rel="stylesheet" href="./styles/ship.css" />
+    <link rel="stylesheet" href="./styles/chart.css" />
   </head>
   <body>
-    <div class="row">
-      <select id="file-select" style="flex: 1; min-width: 0"></select>
+    <header class="row">
+      <select id="file-select" class="grow"></select>
       <select id="run-select"></select>
-    </div>
+    </header>
 
-    <div class="layout">
-      <div>
+    <main class="layout">
+      <section>
         <svg id="ship" role="img" aria-label="Grid kapal"></svg>
-        <div class="row" style="margin-top: 16px">
+        <div class="row controls">
           <button id="step-back" type="button">Back</button>
-          <button id="step-next" type="button">Next</button>
-          <span id="step-label" class="muted" style="margin-left: auto"></span>
+          <button id="step-next" type="button" class="primary">Next</button>
+          <span id="step-label" class="muted push-right"></span>
         </div>
-      </div>
+      </section>
 
-      <div class="panel">
+      <section class="panel">
         <div>
           <div id="unit-label" class="muted"></div>
           <div id="iteration" class="big"></div>
@@ -50,21 +46,21 @@
           <div id="outside"></div>
         </div>
         <details>
-          <summary class="muted" style="cursor: pointer">Detail run</summary>
-          <div id="details" style="line-height: 2; margin-top: 8px"></div>
+          <summary class="muted">Detail run</summary>
+          <div id="details" class="details"></div>
         </details>
-      </div>
-    </div>
+      </section>
+    </main>
 
-    <div style="margin-top: 40px">
+    <section class="charts">
       <div id="chart-title" class="muted"></div>
       <svg id="history-chart" role="img" aria-label="Grafik nilai terhadap iterasi"></svg>
-      <div id="probability-section" hidden style="margin-top: 24px">
+      <div id="probability-section" class="charts-secondary" hidden>
         <div class="muted">Peluang penerimaan e^(ΔE/T)</div>
         <svg id="probability-chart" role="img" aria-label="Grafik peluang penerimaan"></svg>
       </div>
-    </div>
+    </section>
 
-    <script type="module" src="./app.ts"></script>
+    <script type="module" src="./src/app.ts"></script>
   </body>
 </html>
