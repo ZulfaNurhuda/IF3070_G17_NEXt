@@ -62,14 +62,13 @@ class State:
         return State(updated)
 
     def diff(self, other: State) -> Move:
-        # TODO: Implementasikan selisih dua State sebagai Move.
-        #   Input: other (State tujuan, memuat kendaraan yang sama dengan self).
-        #   Output: Move berisi satu Change(vehicle_id, before, after) untuk setiap kendaraan
-        #   yang placement-nya berbeda antara self dan other; Move kosong bila kedua state
-        #   sama. Urutkan berdasarkan vehicle_id agar hasilnya deterministik.
-        #   Invarian: self.apply(self.diff(other)) == other.
-        #   Dipakai GA untuk membentuk Step antar generasi (individu terbaik berganti).
-        raise NotImplementedError
+        if self.placements.keys() != other.placements.keys():
+            raise ValueError("kedua state harus memuat kendaraan yang sama")
+        return tuple(
+            Change(vehicle_id, self.placements[vehicle_id], other.placements[vehicle_id])
+            for vehicle_id in sorted(self.placements)
+            if self.placements[vehicle_id] != other.placements[vehicle_id]
+        )
 
 
 @dataclass(frozen=True, slots=True)
