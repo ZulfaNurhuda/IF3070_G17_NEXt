@@ -52,14 +52,14 @@ class State:
     placements: Mapping[VehicleId, Placement | None]
 
     def apply(self, move: Move) -> State:
-        # TODO: Implementasikan penerapan sebuah Move pada State (immutable).
-        #   Input: move berisi Change(vehicle_id, before, after). Output: State baru yang
-        #   salinannya sama dengan self, kecuali placements[change.vehicle_id] = change.after
-        #   untuk setiap change dalam move. State asal tidak boleh berubah.
-        #   Validasi: placements[change.vehicle_id] harus sama dengan change.before; bila
-        #   tidak, move dibuat dari state lain, sehingga raise ValueError.
-        #   Fungsi ini TIDAK memeriksa constraint (itu tugas evaluator.is_valid).
-        raise NotImplementedError
+        updated = dict(self.placements)
+        for change in move:
+            if change.vehicle_id not in self.placements:
+                raise ValueError(f"kendaraan tidak dikenal: {change.vehicle_id}")
+            if self.placements[change.vehicle_id] != change.before:
+                raise ValueError(f"placement awal {change.vehicle_id} tidak cocok dengan move")
+            updated[change.vehicle_id] = change.after
+        return State(updated)
 
     def diff(self, other: State) -> Move:
         # TODO: Implementasikan selisih dua State sebagai Move.
