@@ -2,36 +2,42 @@ import random
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from src.algorithms.base import SearchResult
+from src.algorithms.base import HistoryRecord, SearchResult, Step
+from src.core.evaluator import try_place
+from src.core.initial import random_state
 from src.core.models import Problem, State
+from src.core.neighbors import random_neighbor
 
 
 def select_parent(
     population: Sequence[State], fitness: Sequence[float], rng: random.Random
 ) -> State:
-    # TODO: Implementasikan seleksi fitness-proportionate (AIMA RANDOM-SELECTION).
-    #   Input: population, fitness (sejajar dengan population), rng. Output: satu State.
-    #   Peluang terpilih proporsional dengan fitness. Bila total fitness 0, pilih seragam.
-    raise NotImplementedError
+    if not population or len(population) != len(fitness):
+        raise ValueError("population dan fitness harus sama-sama tidak kosong dan sejajar")
+    if any(value < 0 for value in fitness):
+        raise ValueError("fitness harus non-negatif")
+    if sum(fitness) == 0:
+        return rng.choice(population)
+    return rng.choices(population, weights=fitness, k=1)[0]
 
 
 def crossover(first: State, second: State, problem: Problem, rng: random.Random) -> State:
-    # TODO: Implementasikan REPRODUCE AIMA dengan satu titik potong.
-    #   Input: dua parent valid, problem, rng. Output: anak yang selalu valid.
-    #   Langkah: urutkan kendaraan berdasarkan id (urutan tetap); pilih titik potong c acak;
-    #   anak dimulai dari State kosong; kendaraan sebelum c diambil dari first, sisanya dari
-    #   second, masing-masing lewat evaluator.try_place. Gen yang gagal ditempatkan
-    #   tetap di luar kapal. Bagian dari first selalu muat (subset state valid).
-    #   Bila fill_after_crossover aktif, jalankan pass greedy.
-    raise NotImplementedError
+    vehicles = sorted(problem.vehicles, key=lambda vehicle: vehicle.id)
+    crossover_point = rng.randrange(len(vehicles) + 1)
+    child = State({vehicle.id: None for vehicle in vehicles})
+    for index, vehicle in enumerate(vehicles):
+        parent = first if index < crossover_point else second
+        placement = parent.placements[vehicle.id]
+        if placement is not None:
+            placed = try_place(child, problem, vehicle.id, placement)
+            if placed is not None:
+                child = placed
+    return child
 
 
 def mutate(state: State, problem: Problem, rng: random.Random) -> State:
-    # TODO: Implementasikan mutasi satu move acak.
-    #   Input: state valid, problem, rng. Output: State valid.
-    #   Langkah: ambil neighbors.random_neighbor; bila mengembalikan None, kembalikan state
-    #   apa adanya; selain itu kembalikan state.apply(move).
-    raise NotImplementedError
+    move = random_neighbor(state, problem, rng)
+    return state if move is None else state.apply(move)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,16 +49,68 @@ class GeneticAlgorithm:
     fill_after_crossover: bool = False
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
-        # TODO: Implementasikan GENETIC-ALGORITHM AIMA (generasional).
-        #   Input: problem dan rng. Output: SearchResult.
-        #   Langkah: populasi awal = population_size x random_state. Untuk tiap generasi:
-        #   salin elitism_count individu terbaik; isi sisa populasi dengan: pilih dua parent
-        #   lewat select_parent (fitness = problem.value), child = crossover, lalu dengan
-        #   peluang mutation_rate child = mutate(child). Berhenti setelah `generations`.
-        #   initial_state = individu terbaik generasi 0; final_state = individu terbaik
-        #   generasi terakhir.
-        #   Catat history per generasi (iteration, value = terbaik, maximum_value,
-        #   average_value), steps = selisih individu terbaik antar generasi (satu step per
-        #   generasi, changes berisi kendaraan yang berubah), iterations = generasi,
-        #   evaluations = populasi x generasi, dan extra bila ada.
-        raise NotImplementedError
+        if self.population_size <= 0:
+            raise ValueError("population_size harus positif")
+        if self.generations < 0:
+            raise ValueError("generations harus non-negatif")
+        if not 0 <= self.mutation_rate <= 1:
+            raise ValueError("mutation_rate harus berada di antara 0 dan 1")
+        if not 0 <= self.elitism_count <= self.population_size:
+            raise ValueError("elitism_count harus berada di antara 0 dan population_size")
+
+        population = [random_state(problem, rng) for _ in range(self.population_size)]
+        fitness = [problem.value(state) for state in population]
+        evaluations = len(population)
+        initial_best = population[max(range(len(population)), key=lambda index: fitness[index])]
+        previous_best = initial_best
+        history = [
+            HistoryRecord(
+                iteration=0,
+                value=max(fitness),
+                maximum_value=max(fitness),
+                average_value=sum(fitness) / len(fitness),
+            )
+        ]
+        steps: list[Step] = []
+
+        for generation in range(1, self.generations + 1):
+            elite_indices = sorted(
+                range(len(population)), key=lambda index: fitness[index], reverse=True
+            )[: self.elitism_count]
+            next_population = [population[index] for index in elite_indices]
+
+            while len(next_population) < self.population_size:
+                first_parent = select_parent(population, fitness, rng)
+                second_parent = select_parent(population, fitness, rng)
+                child = crossover(first_parent, second_parent, problem, rng)
+                if rng.random() < self.mutation_rate:
+                    child = mutate(child, problem, rng)
+                next_population.append(child)
+
+            population = next_population
+            fitness = [problem.value(state) for state in population]
+            evaluations += len(population)
+            best_index = max(range(len(population)), key=lambda index: fitness[index])
+            current_best = population[best_index]
+            maximum_value = fitness[best_index]
+            history.append(
+                HistoryRecord(
+                    iteration=generation,
+                    value=maximum_value,
+                    maximum_value=maximum_value,
+                    average_value=sum(fitness) / len(fitness),
+                )
+            )
+            steps.append(Step(generation, previous_best.diff(current_best)))
+            previous_best = current_best
+
+        final_best = population[max(range(len(population)), key=lambda index: fitness[index])]
+        return SearchResult(
+            initial_state=initial_best,
+            final_state=final_best,
+            iterations=self.generations,
+            evaluations=evaluations,
+            history=tuple(history),
+            steps=tuple(steps),
+            extra={},
+        )
