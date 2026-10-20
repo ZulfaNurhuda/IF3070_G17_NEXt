@@ -1,0 +1,34 @@
+{
+  "ship": {
+    "width": 10,
+    "length": 20,
+    "max_capacity": 72
+  },
+  "vehicles": [
+    {"id": "Car01", "width": 2, "length": 6, "shipping_fee": 60, "weight": 5, "eta": 3},
+    {"id": "Car02", "width": 3, "length": 4, "shipping_fee": 75, "weight": 6, "eta": 5},
+    {"id": "Car03", "width": 4, "length": 3, "shipping_fee": 45, "weight": 4, "eta": 2},
+    {"id": "Car04", "width": 2, "length": 6, "shipping_fee": 80, "weight": 7, "eta": 7},
+    {"id": "Car05", "width": 3, "length": 4, "shipping_fee": 35, "weight": 3, "eta": 1},
+    {"id": "Car06", "width": 4, "length": 3, "shipping_fee": 55, "weight": 5, "eta": 4},
+    {"id": "Car07", "width": 4, "length": 6, "shipping_fee": 25, "weight": 2, "eta": 10},
+    {"id": "Car08", "width": 2, "length": 6, "shipping_fee": 95, "weight": 8, "eta": 6},
+    {"id": "Car09", "width": 4, "length": 6, "shipping_fee": 70, "weight": 6, "eta": 3},
+    {"id": "Car10", "width": 3, "length": 6, "shipping_fee": 40, "weight": 4, "eta": 8},
+    {"id": "Car11", "width": 2, "length": 5, "shipping_fee": 65, "weight": 5, "eta": 5},
+    {"id": "Car12", "width": 3, "length": 5, "shipping_fee": 30, "weight": 3, "eta": 9},
+    {"id": "Car13", "width": 4, "length": 5, "shipping_fee": 90, "weight": 7, "eta": 2},
+    {"id": "Car14", "width": 2, "length": 4, "shipping_fee": 50, "weight": 4, "eta": 6},
+    {"id": "Car15", "width": 3, "length": 3, "shipping_fee": 85, "weight": 6, "eta": 4},
+    {"id": "Car16", "width": 1, "length": 4, "shipping_fee": 20, "weight": 2, "eta": 10},
+    {"id": "Car17", "width": 4, "length": 4, "shipping_fee": 100, "weight": 8, "eta": 1},
+    {"id": "Car18", "width": 2, "length": 3, "shipping_fee": 58, "weight": 5, "eta": 7},
+    {"id": "Car19", "width": 3, "length": 2, "shipping_fee": 42, "weight": 3, "eta": 8},
+    {"id": "Car20", "width": 1, "length": 2, "shipping_fee": 33, "weight": 4, "eta": 5},
+    {"id": "Car21", "width": 4, "length": 2, "shipping_fee": 77, "weight": 6, "eta": 3},
+    {"id": "Car22", "width": 2, "length": 6, "shipping_fee": 68, "weight": 7, "eta": 9},
+    {"id": "Car23", "width": 3, "length": 4, "shipping_fee": 28, "weight": 2, "eta": 6},
+    {"id": "Car24", "width": 4, "length": 3, "shipping_fee": 88, "weight": 5, "eta": 2},
+    {"id": "Car25", "width": 2, "length": 5, "shipping_fee": 48, "weight": 3, "eta": 4}
+  ]
+}
