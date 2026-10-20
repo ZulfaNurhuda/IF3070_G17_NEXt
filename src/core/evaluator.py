@@ -20,14 +20,23 @@ def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
 
 
 def is_valid(state: State, problem: Problem) -> bool:
-    # TODO: Implementasikan pengecekan seluruh constraint pada state.
-    #   Input: state dan problem. Output: True hanya bila (1) tidak ada sel yang ditempati
-    #   lebih dari satu kendaraan, (2) setiap sel footprint berada dalam 0 <= x < ship.width
-    #   dan 0 <= y < ship.length, (3) total weight kendaraan terangkut <= ship.max_capacity.
-    #   Kendaraan di luar kapal (placement None) tidak diperiksa.
-    #   Ini satu-satunya tempat constraint dicek; neighbors, initial, dan crossover GA
-    #   memanggilnya.
-    raise NotImplementedError
+    ship = problem.ship
+    occupied: set[Cell] = set()
+    total_weight = 0
+    for vehicle in problem.vehicles:
+        placement = state.placements[vehicle.id]
+        if placement is None:
+            continue
+        total_weight += vehicle.weight
+        if total_weight > ship.max_capacity:
+            return False
+        for x, y in cells_of(vehicle, placement):
+            if not (0 <= x < ship.width and 0 <= y < ship.length):
+                return False
+            if (x, y) in occupied:
+                return False
+            occupied.add((x, y))
+    return True
 
 
 def try_place(
