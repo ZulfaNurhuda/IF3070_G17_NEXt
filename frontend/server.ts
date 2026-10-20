@@ -1,25 +1,45 @@
+import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import index from "./index.html";
 import type { FileEntry } from "./types";
 
 export const OUTPUT_DIRECTORY = join(import.meta.dir, "..", "output");
-export const PORT = 3000;
+export const PORT = Number(Bun.env.PORT ?? 3000);
+
+const FOLDERS = ["final", "scratch"];
+const SAFE_NAME = /^[A-Za-z0-9_.-]+\.json$/;
+const TIMESTAMP_IN_NAME = /_(\d+)\.json$/;
+
+async function createdAt(folder: string, name: string): Promise<string> {
+  const match = TIMESTAMP_IN_NAME.exec(name);
+  if (match?.[1] !== undefined) {
+    return new Date(Number(match[1]) * 1000).toISOString();
+  }
+  return (await stat(join(OUTPUT_DIRECTORY, folder, name))).mtime.toISOString();
+}
 
 export async function listOutputFiles(): Promise<FileEntry[]> {
-  // TODO: Implementasikan pendaftaran file hasil eksperimen.
-  //   Telusuri OUTPUT_DIRECTORY/final dan OUTPUT_DIRECTORY/scratch, ambil semua *.json,
-  //   dan kembalikan FileEntry {name, folder, created_at}. created_at dibaca dari field
-  //   created_at di dalam JSON (fallback ke waktu modifikasi file). Urutkan terbaru dulu.
-  //   Bila folder belum ada, anggap kosong (jangan error).
-  throw new Error("Belum diimplementasi");
+  const entries: FileEntry[] = [];
+  for (const folder of FOLDERS) {
+    const names = await readdir(join(OUTPUT_DIRECTORY, folder)).catch(() => []);
+    for (const name of names) {
+      if (name.endsWith(".json")) {
+        entries.push({ name, folder, created_at: await createdAt(folder, name) });
+      }
+    }
+  }
+  return entries.sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 export async function serveOutputFile(folder: string, name: string): Promise<Response> {
-  // TODO: Implementasikan penyajian satu file hasil eksperimen.
-  //   Keamanan: folder hanya boleh "final" atau "scratch", name tidak boleh mengandung
-  //   pemisah path atau "..", dan harus berakhiran .json; selain itu balas 400.
-  //   Bila file tidak ada balas 404. Selain itu balas isi file dengan content type JSON.
-  throw new Error("Belum diimplementasi");
+  if (!FOLDERS.includes(folder) || !SAFE_NAME.test(name) || name.includes("..")) {
+    return new Response("Permintaan tidak valid", { status: 400 });
+  }
+  const file = Bun.file(join(OUTPUT_DIRECTORY, folder, name));
+  if (!(await file.exists())) {
+    return new Response("File tidak ditemukan", { status: 404 });
+  }
+  return new Response(file, { headers: { "Content-Type": "application/json" } });
 }
 
 Bun.serve({
