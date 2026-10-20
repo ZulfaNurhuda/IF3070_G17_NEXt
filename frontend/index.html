@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NEXt Ship Loader</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 1rem; }
+      header, .controls { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+      canvas { border: 1px solid #888; max-width: 100%; }
+      #info-panel { margin: 1rem 0; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <select id="file-select"></select>
+      <select id="run-select"></select>
+    </header>
+    <main>
+      <section>
+        <div class="controls">
+          <button id="step-back" type="button">Back</button>
+          <span id="step-label"></span>
+          <button id="step-next" type="button">Next</button>
+        </div>
+        <canvas id="ship-canvas" width="600" height="800"></canvas>
+      </section>
+      <section id="info-panel"></section>
+      <section>
+        <canvas id="history-chart" width="800" height="300"></canvas>
+      </section>
+    </main>
+    <script type="module" src="./app.ts"></script>
+  </body>
+</html>
