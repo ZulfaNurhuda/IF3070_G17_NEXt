@@ -14,11 +14,9 @@ def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
 
 
 def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
-    # TODO: Implementasikan daftar kendaraan yang terangkut pada state.
-    #   Input: state dan problem. Output: tuple Vehicle yang placement-nya bukan None,
-    #   dengan urutan sama seperti problem.vehicles.
-    #   Dipakai oleh objectives.py dan is_valid.
-    raise NotImplementedError
+    return tuple(
+        vehicle for vehicle in problem.vehicles if state.placements[vehicle.id] is not None
+    )
 
 
 def is_valid(state: State, problem: Problem) -> bool:
