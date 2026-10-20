@@ -248,8 +248,18 @@ def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
 
 
 def write_experiment(experiment: ExperimentResult, directory: Path) -> Path:
-    # TODO: Implementasikan penulisan hasil eksperimen ke file JSON baru.
-    #   Nama file: {algorithm}_ship{width}x{length}-vehicles{n}_{unix_timestamp}.json
-    #   Buat direktori bila belum ada, jangan menimpa file
-    #   yang sudah ada, tulis UTF-8 dengan indent=2. Output: path file yang ditulis.
-    raise NotImplementedError
+    ship = experiment.problem.ship
+    vehicle_count = len(experiment.problem.vehicles)
+    prefix = f"{experiment.algorithm_name}_ship{ship.width}x{ship.length}-vehicles{vehicle_count}"
+    content = json.dumps(experiment_payload(experiment), indent=2, ensure_ascii=False) + "\n"
+    directory.mkdir(parents=True, exist_ok=True)
+    timestamp = int(experiment.created_at.timestamp())
+    while True:
+        path = directory / f"{prefix}_{timestamp}.json"
+        try:
+            with path.open("x", encoding="utf-8") as handle:
+                handle.write(content)
+        except FileExistsError:
+            timestamp += 1
+        else:
+            return path
