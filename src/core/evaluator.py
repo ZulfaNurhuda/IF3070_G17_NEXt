@@ -1,4 +1,4 @@
-from src.core.models import Orientation, Placement, Problem, State, Vehicle, VehicleId
+from src.core.models import Change, Orientation, Placement, Problem, State, Vehicle, VehicleId
 
 type Cell = tuple[int, int]
 
@@ -42,9 +42,6 @@ def is_valid(state: State, problem: Problem) -> bool:
 def try_place(
     state: State, problem: Problem, vehicle_id: VehicleId, placement: Placement
 ) -> State | None:
-    # TODO: Implementasikan penempatan kendaraan yang aman terhadap constraint.
-    #   Input: state, problem, vehicle_id, placement. Output: State baru dengan kendaraan itu
-    #   berada di placement, atau None bila hasilnya tidak lolos is_valid.
-    #   State asal tidak boleh berubah. Dipakai oleh initial.random_state dan crossover GA
-    #   (kendaraan yang gagal ditempatkan tetap di luar kapal).
-    raise NotImplementedError
+    move = (Change(vehicle_id, state.placements.get(vehicle_id), placement),)
+    candidate = state.apply(move)
+    return candidate if is_valid(candidate, problem) else None
