@@ -1,5 +1,6 @@
 import json
 from collections.abc import Mapping
+from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
@@ -213,12 +214,37 @@ def run_payload(record: RunRecord, problem: Problem) -> RunPayload:
     }
 
 
+def problem_payload(problem: Problem) -> ProblemPayload:
+    ship = problem.ship
+    return {
+        "ship": {"width": ship.width, "length": ship.length, "max_capacity": ship.max_capacity},
+        "vehicles": [
+            {
+                "id": vehicle.id,
+                "width": vehicle.width,
+                "length": vehicle.length,
+                "shipping_fee": vehicle.shipping_fee,
+                "weight": vehicle.weight,
+                "eta": vehicle.eta,
+            }
+            for vehicle in problem.vehicles
+        ],
+    }
+
+
 def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
-    # TODO: Implementasikan konversi ExperimentResult ke ExperimentPayload.
-    #   params = dataclasses.asdict(experiment.algorithm) (nilai yang sudah resolved),
-    #   created_at dalam format ISO tanpa mikrodetik, problem lewat konversi Problem ke
-    #   ProblemPayload, objective = problem.objective_name.
-    raise NotImplementedError
+    algorithm: object = experiment.algorithm
+    if not is_dataclass(algorithm) or isinstance(algorithm, type):
+        raise TypeError("algoritma harus berupa instance dataclass")
+    problem = experiment.problem
+    return {
+        "problem": problem_payload(problem),
+        "algorithm": experiment.algorithm_name,
+        "objective": problem.objective_name,
+        "params": asdict(algorithm),
+        "created_at": experiment.created_at.isoformat(timespec="seconds"),
+        "runs": [run_payload(record, problem) for record in experiment.runs],
+    }
 
 
 def write_experiment(experiment: ExperimentResult, directory: Path) -> Path:
