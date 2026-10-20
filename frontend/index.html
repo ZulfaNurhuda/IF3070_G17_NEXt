@@ -5,31 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>NEXt Ship Loader</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 1rem; }
-      header, .controls { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
-      canvas { border: 1px solid #888; max-width: 100%; }
-      #info-panel { margin: 1rem 0; white-space: pre-wrap; }
+      body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 1000px; padding: 0 1rem; color: #222; }
+      .row { display: flex; align-items: center; gap: 12px; }
+      .layout { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 24px; }
+      .panel { display: flex; flex-direction: column; gap: 28px; }
+      .muted { color: #666; font-size: 14px; }
+      .big { font-size: 28px; font-weight: 500; }
+      svg { width: 100%; }
     </style>
   </head>
   <body>
-    <header>
-      <select id="file-select"></select>
+    <div class="row">
+      <select id="file-select" style="flex: 1; min-width: 0"></select>
       <select id="run-select"></select>
-    </header>
-    <main>
-      <section>
-        <div class="controls">
+    </div>
+
+    <div class="layout">
+      <div>
+        <svg id="ship" role="img" aria-label="Grid kapal"></svg>
+        <div class="row" style="margin-top: 16px">
           <button id="step-back" type="button">Back</button>
-          <span id="step-label"></span>
           <button id="step-next" type="button">Next</button>
+          <span id="step-label" class="muted" style="margin-left: auto"></span>
         </div>
-        <canvas id="ship-canvas" width="600" height="800"></canvas>
-      </section>
-      <section id="info-panel"></section>
-      <section>
-        <canvas id="history-chart" width="800" height="300"></canvas>
-      </section>
-    </main>
+      </div>
+
+      <div class="panel">
+        <div>
+          <div id="unit-label" class="muted"></div>
+          <div id="iteration" class="big"></div>
+        </div>
+        <div>
+          <div class="muted">Nilai</div>
+          <div id="value" class="big"></div>
+          <div id="weight" class="muted"></div>
+        </div>
+        <div>
+          <div class="muted">Perubahan</div>
+          <div id="change"></div>
+        </div>
+        <div id="note"></div>
+        <div>
+          <div class="muted">Di luar kapal</div>
+          <div id="outside"></div>
+        </div>
+        <details>
+          <summary class="muted" style="cursor: pointer">Detail run</summary>
+          <div id="details" style="line-height: 2; margin-top: 8px"></div>
+        </details>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px">
+      <div id="chart-title" class="muted"></div>
+      <svg id="history-chart" role="img" aria-label="Grafik nilai terhadap iterasi"></svg>
+      <div id="probability-section" hidden style="margin-top: 24px">
+        <div class="muted">Peluang penerimaan e^(ΔE/T)</div>
+        <svg id="probability-chart" role="img" aria-label="Grafik peluang penerimaan"></svg>
+      </div>
+    </div>
+
     <script type="module" src="./app.ts"></script>
   </body>
 </html>
