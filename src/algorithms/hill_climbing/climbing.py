@@ -6,7 +6,7 @@ from itertools import pairwise
 from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
 from src.core.models import Move, Problem, State
-from src.core.neighbors import successors
+from src.core.neighborhood.enumeration import successors
 
 type Candidate = tuple[Move, State, float]
 type Choice = Callable[[float, list[Candidate], random.Random], Candidate | None]

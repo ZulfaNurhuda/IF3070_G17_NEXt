@@ -2,7 +2,7 @@ import random
 from dataclasses import dataclass, field, replace
 
 from src.algorithms.base import Algorithm, HistoryRecord, SearchResult, Step
-from src.algorithms.hill_climbing import SteepestAscent
+from src.algorithms.hill_climbing.climbing import SteepestAscent
 from src.core.models import Problem
 
 

@@ -4,11 +4,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import pairwise
 
-from src.algorithms.annealing_schedule import resolve_schedule
 from src.algorithms.base import HistoryRecord, SearchResult, Step
+from src.algorithms.simulated_annealing.schedule import resolve_schedule
 from src.core.initial import random_state
 from src.core.models import Problem
-from src.core.sampling import random_successor
+from src.core.neighborhood.sampling import random_successor
 
 
 def acceptance_probability(delta: float, temperature: float) -> float:

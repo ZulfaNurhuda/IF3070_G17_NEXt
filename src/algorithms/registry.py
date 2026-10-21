@@ -3,10 +3,10 @@ from dataclasses import fields, is_dataclass
 from typing import Final, get_type_hints
 
 from src.algorithms.base import Algorithm
-from src.algorithms.genetic_algorithm import GeneticAlgorithm
-from src.algorithms.hill_climbing import SidewaysMove, SteepestAscent, Stochastic
-from src.algorithms.random_restart import RandomRestart
-from src.algorithms.simulated_annealing import SimulatedAnnealing
+from src.algorithms.genetic_algorithm.evolution import GeneticAlgorithm
+from src.algorithms.hill_climbing.climbing import SidewaysMove, SteepestAscent, Stochastic
+from src.algorithms.hill_climbing.random_restart import RandomRestart
+from src.algorithms.simulated_annealing.annealing import SimulatedAnnealing
 
 REGISTRY: Final[dict[str, Callable[..., Algorithm]]] = {
     "steepest-ascent": SteepestAscent,

@@ -5,7 +5,7 @@ from statistics import fmean
 from typing import Final
 
 from src.core.models import Problem, State
-from src.core.sampling import random_successor
+from src.core.neighborhood.sampling import random_successor
 
 TEMPERATURE_SAMPLES: Final = 100
 INITIAL_TEMPERATURE_FACTOR: Final = 2.0
