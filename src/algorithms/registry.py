@@ -1,4 +1,5 @@
 from collections.abc import Callable, Mapping
+from dataclasses import fields, is_dataclass
 from typing import Final, get_type_hints
 
 from src.algorithms.base import Algorithm
@@ -49,3 +50,22 @@ def create_algorithm(name: str, parameters: Mapping[str, object]) -> Algorithm:
         for key, value in parameters.items()
     }
     return REGISTRY[name](**arguments)
+
+
+def registry_name(algorithm: object) -> str:
+    for name, factory in REGISTRY.items():
+        if factory is type(algorithm):
+            return name
+    raise ValueError(f"algoritma tidak terdaftar: {type(algorithm).__name__}")
+
+
+def algorithm_parameters(algorithm: object) -> dict[str, object]:
+    if not is_dataclass(algorithm) or isinstance(algorithm, type):
+        raise TypeError("algoritma harus berupa instance dataclass")
+    parameters: dict[str, object] = {}
+    for field in fields(algorithm):
+        value: object = getattr(algorithm, field.name)
+        if is_dataclass(value) and not isinstance(value, type):
+            value = {"algorithm": registry_name(value), **algorithm_parameters(value)}
+        parameters[field.name] = value
+    return parameters
