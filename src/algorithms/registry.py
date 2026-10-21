@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import Final
+from typing import Final, get_type_hints
 
 from src.algorithms.base import Algorithm
 from src.algorithms.genetic_algorithm import GeneticAlgorithm
@@ -16,18 +16,36 @@ REGISTRY: Final[dict[str, Callable[..., Algorithm]]] = {
 }
 
 
+def parameter_types(name: str) -> dict[str, object]:
+    if name not in REGISTRY:
+        valid_names = ", ".join(sorted(REGISTRY))
+        raise ValueError(f"algoritma tidak dikenal: {name}; pilihan: {valid_names}")
+    return dict(get_type_hints(REGISTRY[name]))
+
+
+def nested_algorithm(value: object) -> Algorithm:
+    if isinstance(value, str):
+        return create_algorithm(value, {})
+    if isinstance(value, Mapping):
+        nested_name = value.get("algorithm")
+        if isinstance(nested_name, str):
+            rest = {key: item for key, item in value.items() if key != "algorithm"}
+            return create_algorithm(nested_name, rest)
+    raise ValueError(
+        'algoritma bersarang harus berupa nama algoritma atau objek {"algorithm": nama, ...}'
+    )
+
+
 def create_algorithm(name: str, parameters: Mapping[str, object]) -> Algorithm:
-    # TODO: Implementasikan pembuatan algoritma dari nama dan parameter.
-    #   Input: name (kunci REGISTRY), parameters (nilai sudah bertipe benar).
-    #   Output: instance Algorithm yang siap dijalankan.
-    #   Langkah: bila name tidak ada di REGISTRY, raise ValueError berisi daftar nama valid.
-    #   Parameter yang tidak diisi memakai default dataclass (random-restart sudah
-    #   default ke steepest-ascent; simulated-annealing menghitung sendiri suhu yang
-    #   bernilai None di awal run). Aturan algoritma bersarang berlaku umum, bukan khusus
-    #   random-restart: untuk setiap field dataclass yang bertipe Algorithm (saat ini
-    #   hanya inner), nilainya boleh berupa nama algoritma (kunci REGISTRY) atau mapping
-    #   {"algorithm": <nama>, ...parameter lain}; keduanya dibuat lewat panggilan
-    #   create_algorithm rekursif, sehingga bentuk "params" yang ditulis ke JSON hasil
-    #   eksperimen bisa dipakai ulang apa adanya. Nama di dalamnya juga harus divalidasi,
-    #   dan parameter lain yang bertipe string tidak boleh ikut ditafsirkan sebagai nama.
-    raise NotImplementedError
+    types = parameter_types(name)
+    unknown = sorted(set(parameters) - set(types))
+    if unknown:
+        valid_names = ", ".join(types) or "tidak ada"
+        raise ValueError(
+            f"parameter tidak dikenal untuk {name}: {', '.join(unknown)}; pilihan: {valid_names}"
+        )
+    arguments = {
+        key: nested_algorithm(value) if types[key] is Algorithm else value
+        for key, value in parameters.items()
+    }
+    return REGISTRY[name](**arguments)
