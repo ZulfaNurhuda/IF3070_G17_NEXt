@@ -31,7 +31,9 @@ function formatValue(value: unknown): string {
     return Number.isInteger(value) ? String(value) : String(Number(value.toPrecision(6)));
   }
   if (typeof value === "object") {
-    return JSON.stringify(value);
+    return Object.entries(value)
+      .map(([key, item]) => `${key}: ${formatValue(item)}`)
+      .join(", ");
   }
   return String(value);
 }
