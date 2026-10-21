@@ -1,29 +1,111 @@
+import argparse
+import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Final
+from typing import Final, get_args
 
-DEFAULT_INSTANCE: Final = Path("src/instances/default.json")
+from src.algorithms.base import Algorithm
+from src.algorithms.registry import REGISTRY, create_algorithm, parameter_types
+from src.core.objectives import DEFAULT_OBJECTIVE_NAME, OBJECTIVES
+from src.experiments.configs import OFFICIAL_EXPERIMENTS
+from src.experiments.orchestrator import orchestrate_official_experiments
+from src.experiments.runner import execute_runs
+from src.serialize import load_problem, write_experiment
+
+PROJECT_ROOT: Final = Path(__file__).resolve().parent.parent
+DEFAULT_INSTANCE: Final = PROJECT_ROOT / "src" / "instances" / "default.json"
+OUTPUT_ROOT: Final = PROJECT_ROOT / "output"
 DEFAULT_RUNS: Final = 3
 DEFAULT_SEED: Final = 0
 DEFAULT_OUTPUT: Final = "scratch"
+OUTPUT_FOLDERS: Final = ("scratch", "final")
+
+
+def convert_parameter(algorithm: str, key: str, text: str, annotation: object) -> object:
+    if annotation is Algorithm:
+        return text
+    candidates = (annotation, *get_args(annotation))
+    for number_type in (int, float):
+        if number_type in candidates:
+            try:
+                return number_type(text)
+            except ValueError:
+                raise ValueError(
+                    f"--param {key}: nilai '{text}' bukan {number_type.__name__}"
+                ) from None
+    raise ValueError(f"--param {key}: tipe parameter {algorithm} tidak didukung")
+
+
+def parse_parameters(algorithm: str, pairs: Sequence[str]) -> dict[str, object]:
+    types = parameter_types(algorithm)
+    parameters: dict[str, object] = {}
+    for pair in pairs:
+        key, separator, text = pair.partition("=")
+        if not separator:
+            raise ValueError(f"--param harus berbentuk nama=nilai, bukan '{pair}'")
+        if key not in types:
+            valid_names = ", ".join(types) or "tidak ada"
+            raise ValueError(
+                f"--param {key}: tidak dikenal untuk {algorithm}; pilihan: {valid_names}"
+            )
+        if key in parameters:
+            raise ValueError(f"--param {key}: diberikan lebih dari sekali")
+        parameters[key] = convert_parameter(algorithm, key, text, types[key])
+    return parameters
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="python -m src.cli")
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    run = commands.add_parser("run", help="jalankan satu algoritma")
+    run.add_argument("--algorithm", required=True, choices=sorted(REGISTRY))
+    run.add_argument("--param", action="append", default=[], metavar="NAMA=NILAI")
+    run.add_argument("--runs", type=int, default=DEFAULT_RUNS)
+    run.add_argument("--out", choices=OUTPUT_FOLDERS, default=DEFAULT_OUTPUT)
+
+    run_all = commands.add_parser("run-all", help="jalankan semua eksperimen resmi ke output/final")
+
+    for command in (run, run_all):
+        command.add_argument("--instance", type=Path, default=DEFAULT_INSTANCE)
+        command.add_argument(
+            "--objective", choices=sorted(OBJECTIVES), default=DEFAULT_OBJECTIVE_NAME
+        )
+        command.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    return parser
+
+
+def run_command(arguments: argparse.Namespace) -> None:
+    parameters = parse_parameters(arguments.algorithm, arguments.param)
+    algorithm = create_algorithm(arguments.algorithm, parameters)
+    problem = load_problem(arguments.instance, arguments.objective)
+    experiment = execute_runs(problem, algorithm, arguments.runs, arguments.seed)
+    print(write_experiment(experiment, OUTPUT_ROOT / arguments.out, arguments.algorithm))
+
+
+def run_all_command(arguments: argparse.Namespace) -> None:
+    problem = load_problem(arguments.instance, arguments.objective)
+    total = len(OFFICIAL_EXPERIMENTS)
+    results = orchestrate_official_experiments(problem, arguments.seed)
+    for number, (config, experiment) in enumerate(results, start=1):
+        path = write_experiment(experiment, OUTPUT_ROOT / "final", config.name)
+        print(f"[{number}/{total}] {config.name} -> {path}", flush=True)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    # TODO: Implementasikan entrypoint CLI dengan argparse.
-    #   Subcommand `run`: --algorithm (wajib, kunci REGISTRY), --instance (default
-    #   DEFAULT_INSTANCE), --objective (default objectives.DEFAULT_OBJECTIVE_NAME),
-    #   --param nama=nilai (boleh diulang), --runs (default DEFAULT_RUNS),
-    #   --seed (default DEFAULT_SEED),
-    #   --out {scratch,final} (default DEFAULT_OUTPUT). Alur: load_problem, ubah --param ke
-    #   tipe field dataclass algoritma terkait (batas luar sistem: validasi dan raise error
-    #   yang jelas), create_algorithm, execute_runs, write_experiment ke output/<out>/
-    #   dengan nama algoritma sebagai awalan nama file.
-    #   Subcommand `run-all`: --instance, --objective, --seed; menjalankan
-    #   orchestrate_official_experiments dan menulis semuanya ke output/final, memasangkan
-    #   tiap hasil dengan configs.OFFICIAL_EXPERIMENTS berurutan dan memakai config.name
-    #   sebagai awalan nama file agar enam variasi genetic-algorithm bisa dibedakan.
-    #   Output: exit code 0 bila sukses, tidak nol bila argumen tidak valid.
-    raise NotImplementedError
+    arguments = build_parser().parse_args(argv)
+    try:
+        if arguments.command == "run":
+            run_command(arguments)
+        else:
+            run_all_command(arguments)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    except OSError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
