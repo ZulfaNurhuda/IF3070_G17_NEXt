@@ -9,7 +9,9 @@ def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
     else:
         extent_x, extent_y = vehicle.length, vehicle.width
     return frozenset(
-        (placement.x + dx, placement.y + dy) for dx in range(extent_x) for dy in range(extent_y)
+        (placement.x + offset_x, placement.y + offset_y)
+        for offset_x in range(extent_x)
+        for offset_y in range(extent_y)
     )
 
 
