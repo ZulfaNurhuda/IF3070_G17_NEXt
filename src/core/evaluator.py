@@ -7,6 +7,7 @@ from src.core.models import (
     Orientation,
     Placement,
     Problem,
+    Ship,
     State,
     Vehicle,
     VehicleId,
@@ -24,11 +25,19 @@ class Occupancy:
 EMPTY_OCCUPANCY = Occupancy({}, 0)
 
 
+def footprint(vehicle: Vehicle, orientation: Orientation) -> tuple[int, int]:
+    if orientation is Orientation.VERTICAL:
+        return vehicle.width, vehicle.length
+    return vehicle.length, vehicle.width
+
+
+def fits_on_deck(vehicle: Vehicle, placement: Placement, ship: Ship) -> bool:
+    extent_x, extent_y = footprint(vehicle, placement.orientation)
+    return 0 <= placement.x <= ship.width - extent_x and 0 <= placement.y <= ship.length - extent_y
+
+
 def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
-    if placement.orientation is Orientation.VERTICAL:
-        extent_x, extent_y = vehicle.width, vehicle.length
-    else:
-        extent_x, extent_y = vehicle.length, vehicle.width
+    extent_x, extent_y = footprint(vehicle, placement.orientation)
     return frozenset(
         (placement.x + offset_x, placement.y + offset_y)
         for offset_x in range(extent_x)
@@ -69,13 +78,13 @@ def is_valid_move(move: Move, occupancy: Occupancy, problem: Problem) -> bool:
     for vehicle, change in moved:
         if change.after is None:
             continue
-        for x, y in cells_of(vehicle, change.after):
-            if not (0 <= x < ship.width and 0 <= y < ship.length):
+        if not fits_on_deck(vehicle, change.after, ship):
+            return False
+        for cell in cells_of(vehicle, change.after):
+            owner = occupancy.owners.get(cell)
+            if (owner is not None and owner not in moved_ids) or cell in taken:
                 return False
-            owner = occupancy.owners.get((x, y))
-            if (owner is not None and owner not in moved_ids) or (x, y) in taken:
-                return False
-            taken.add((x, y))
+            taken.add(cell)
     return True
 
 
