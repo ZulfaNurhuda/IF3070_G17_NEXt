@@ -74,10 +74,6 @@ def successors(state: State, problem: Problem) -> Iterator[Successor]:
             yield move, state.apply(move)
 
 
-def enumerate_neighbors(state: State, problem: Problem) -> Iterator[Move]:
-    return (move for move, _ in successors(state, problem))
-
-
 type Sampler = Callable[[State, Problem, random.Random], Move | None]
 
 
@@ -126,8 +122,3 @@ def random_successor(state: State, problem: Problem, rng: random.Random) -> Succ
         if move is not None and is_valid_move(move, occupancy, problem):
             return move, state.apply(move)
     return None
-
-
-def random_neighbor(state: State, problem: Problem, rng: random.Random) -> Move | None:
-    successor = random_successor(state, problem, rng)
-    return None if successor is None else successor[0]
