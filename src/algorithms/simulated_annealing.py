@@ -1,17 +1,36 @@
 import math
 import random
 from dataclasses import dataclass
+from statistics import fmean
+from typing import Final
 
 from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
-from src.core.models import Problem
+from src.core.models import Problem, State
 from src.core.neighbors import random_successor
+
+TEMPERATURE_SAMPLES: Final = 100
 
 
 def acceptance_probability(delta: float, temperature: float) -> float:
     if delta > 0:
         return 1.0
     return math.exp(delta / temperature)
+
+
+def temperature_scale(state: State, problem: Problem, rng: random.Random) -> tuple[float, int]:
+    value = problem.value(state)
+    deltas: list[float] = []
+    for _ in range(TEMPERATURE_SAMPLES):
+        successor = random_successor(state, problem, rng)
+        if successor is not None:
+            deltas.append(problem.value(successor[1]) - value)
+    magnitudes = (
+        [-delta for delta in deltas if delta < 0]
+        or [abs(delta) for delta in deltas if delta != 0]
+        or [1.0]
+    )
+    return fmean(magnitudes), len(deltas)
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,20 +41,17 @@ class SimulatedAnnealing:
     cooling_rate: float | None = None
     stuck_patience: int = 200
 
-    def schedule(self, problem: Problem) -> tuple[float, float, float]:
+    def schedule(self, scale: float) -> tuple[float, float, float]:
         if self.max_iterations < 1:
             raise ValueError("max_iterations harus minimal 1")
         if self.stuck_patience < 1:
             raise ValueError("stuck_patience harus minimal 1")
-        average_fee = sum(vehicle.shipping_fee for vehicle in problem.vehicles) / len(
-            problem.vehicles
-        )
         initial_temperature = self.initial_temperature
         if initial_temperature is None:
-            initial_temperature = 2.0 * average_fee
+            initial_temperature = 2.0 * scale
         minimum_temperature = self.minimum_temperature
         if minimum_temperature is None:
-            minimum_temperature = 0.01 * average_fee
+            minimum_temperature = 0.01 * scale
         if not 0 < minimum_temperature < initial_temperature < math.inf:
             raise ValueError(
                 "suhu harus berhingga dan memenuhi 0 < minimum_temperature < initial_temperature"
@@ -48,11 +64,15 @@ class SimulatedAnnealing:
         return initial_temperature, minimum_temperature, cooling_rate
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
-        initial_temperature, minimum_temperature, cooling_rate = self.schedule(problem)
         current = random_state(problem, rng)
         initial_state = current
         current_value = problem.value(current)
         evaluations = 1
+        scale = 1.0
+        if self.initial_temperature is None or self.minimum_temperature is None:
+            scale, sampled = temperature_scale(current, problem, rng)
+            evaluations += sampled
+        initial_temperature, minimum_temperature, cooling_rate = self.schedule(scale)
         temperature = initial_temperature
         best_seen_value = current_value
         stuck_streak = 0
@@ -102,6 +122,7 @@ class SimulatedAnnealing:
                 "stuck_events": float(stuck_events),
                 "longest_streak": float(longest_streak),
                 "best_seen_value": best_seen_value,
+                "temperature_scale": scale,
                 "initial_temperature": initial_temperature,
                 "minimum_temperature": minimum_temperature,
                 "cooling_rate": cooling_rate,
