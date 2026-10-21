@@ -4,7 +4,7 @@ from itertools import chain, combinations
 from typing import Final
 
 from src.core.evaluator import is_valid
-from src.core.models import Change, Move, Orientation, Placement, Problem, State
+from src.core.models import Change, Move, Orientation, Placement, Problem, State, Vehicle
 
 MAX_RANDOM_NEIGHBOR_ATTEMPTS: Final = 100
 
@@ -15,13 +15,27 @@ def flipped(orientation: Orientation) -> Orientation:
     return Orientation.VERTICAL
 
 
+def rotation_move(vehicle: Vehicle, state: State) -> Move | None:
+    placement = state.placements[vehicle.id]
+    if placement is None or vehicle.width == vehicle.length:
+        return None
+    rotated = Placement(placement.x, placement.y, flipped(placement.orientation))
+    return (Change(vehicle.id, placement, rotated),)
+
+
+def swap_move(first: Vehicle, second: Vehicle, state: State) -> Move | None:
+    first_placement = state.placements[first.id]
+    second_placement = state.placements[second.id]
+    if first_placement == second_placement:
+        return None
+    return (
+        Change(first.id, first_placement, second_placement),
+        Change(second.id, second_placement, first_placement),
+    )
+
+
 def rotation_candidates(state: State, problem: Problem) -> Iterator[Move]:
-    for vehicle in problem.vehicles:
-        placement = state.placements[vehicle.id]
-        if placement is None or vehicle.width == vehicle.length:
-            continue
-        rotated = Placement(placement.x, placement.y, flipped(placement.orientation))
-        yield (Change(vehicle.id, placement, rotated),)
+    return filter(None, (rotation_move(vehicle, state) for vehicle in problem.vehicles))
 
 
 def relocation_candidates(state: State, problem: Problem) -> Iterator[Move]:
@@ -42,15 +56,8 @@ def relocation_candidates(state: State, problem: Problem) -> Iterator[Move]:
 
 
 def swap_candidates(state: State, problem: Problem) -> Iterator[Move]:
-    for first, second in combinations(problem.vehicles, 2):
-        first_placement = state.placements[first.id]
-        second_placement = state.placements[second.id]
-        if first_placement == second_placement:
-            continue
-        yield (
-            Change(first.id, first_placement, second_placement),
-            Change(second.id, second_placement, first_placement),
-        )
+    pairs = combinations(problem.vehicles, 2)
+    return filter(None, (swap_move(first, second, state) for first, second in pairs))
 
 
 def enumerate_neighbors(state: State, problem: Problem) -> Iterator[Move]:
@@ -68,19 +75,10 @@ type Sampler = Callable[[State, Problem, random.Random], Move | None]
 
 
 def sample_rotation(state: State, problem: Problem, rng: random.Random) -> Move | None:
-    if not problem.vehicles:
-        return None
-    vehicle = rng.choice(problem.vehicles)
-    placement = state.placements[vehicle.id]
-    if placement is None or vehicle.width == vehicle.length:
-        return None
-    rotated = Placement(placement.x, placement.y, flipped(placement.orientation))
-    return (Change(vehicle.id, placement, rotated),)
+    return rotation_move(rng.choice(problem.vehicles), state)
 
 
 def sample_relocation(state: State, problem: Problem, rng: random.Random) -> Move | None:
-    if not problem.vehicles:
-        return None
     ship = problem.ship
     vehicle = rng.choice(problem.vehicles)
     current = state.placements[vehicle.id]
@@ -97,28 +95,14 @@ def sample_relocation(state: State, problem: Problem, rng: random.Random) -> Mov
 
 
 def sample_swap(state: State, problem: Problem, rng: random.Random) -> Move | None:
-    if len(problem.vehicles) < 2:
-        return None
     first, second = rng.sample(problem.vehicles, 2)
-    first_placement = state.placements[first.id]
-    second_placement = state.placements[second.id]
-    if first_placement == second_placement:
-        return None
-    return (
-        Change(first.id, first_placement, second_placement),
-        Change(second.id, second_placement, first_placement),
-    )
+    return swap_move(first, second, state)
 
 
 SAMPLERS: Final[tuple[Sampler, ...]] = (sample_rotation, sample_relocation, sample_swap)
 
 
-def random_neighbor(
-    state: State,
-    problem: Problem,
-    rng: random.Random,
-    max_attempts: int = MAX_RANDOM_NEIGHBOR_ATTEMPTS,
-) -> Move | None:
+def random_neighbor(state: State, problem: Problem, rng: random.Random) -> Move | None:
     vehicle_count = len(problem.vehicles)
     if vehicle_count == 0:
         return None
@@ -128,7 +112,7 @@ def random_neighbor(
         vehicle_count * (positions + 1),
         vehicle_count * (vehicle_count - 1) // 2,
     )
-    for _ in range(max_attempts):
+    for _ in range(MAX_RANDOM_NEIGHBOR_ATTEMPTS):
         sampler = rng.choices(SAMPLERS, weights=weights)[0]
         move = sampler(state, problem, rng)
         if move is not None and is_valid(state.apply(move), problem):
