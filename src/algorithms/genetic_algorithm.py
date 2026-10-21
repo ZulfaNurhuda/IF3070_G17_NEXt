@@ -7,7 +7,7 @@ from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.evaluator import place_in_order
 from src.core.initial import random_state
 from src.core.models import Placement, Problem, State, VehicleId
-from src.core.neighbors import random_successor
+from src.core.sampling import random_successor
 
 
 def roulette_weights(fitness: Sequence[float]) -> list[float] | None:
