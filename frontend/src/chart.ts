@@ -31,10 +31,10 @@ function seriesPoints(
   });
 }
 
-function largestCoordinate(lines: ChartLine[], axis: 0 | 1, floor: number): number {
+function largestValue(lines: ChartLine[]): number {
   return lines.reduce(
-    (largest, line) => line.points.reduce((inner, point) => Math.max(inner, point[axis]), largest),
-    floor,
+    (largest, line) => line.points.reduce((inner, [, value]) => Math.max(inner, value), largest),
+    0,
   );
 }
 
@@ -48,17 +48,17 @@ function horizontalLine(className: string, y: number): SVGElement {
   });
 }
 
-function tickLabel(x: number, y: number, anchor: string, text: string): SVGElement {
-  return svgElement("text", { class: "tick-label", x, y, "text-anchor": anchor }, text);
+function tickLabel(x: number, y: number, edge: "start" | "end", text: string): SVGElement {
+  return svgElement("text", { class: `tick-label tick-${edge}`, x, y }, text);
 }
 
 function drawChart(
   svg: SVGSVGElement,
   lines: ChartLine[],
+  lastIteration: number,
   top: number,
   height: number,
 ): MoveMarker {
-  const lastIteration = largestCoordinate(lines, 0, 1);
   const toX = (iteration: number): number =>
     MARGIN.left + (iteration / lastIteration) * (WIDTH - MARGIN.left - MARGIN.right);
   const toY = (value: number): number =>
@@ -102,11 +102,13 @@ export function renderHistoryChart(run: RunPayload, population: boolean): MoveMa
   byId("chart-title").textContent = population
     ? "Nilai maksimum (garis) dan rata-rata (putus-putus) populasi"
     : "Nilai terhadap iterasi";
+  const lastIteration = Math.max(1, run.iterations);
   const markers = [
     drawChart(
       byId<SVGSVGElement>("history-chart"),
       lines,
-      niceTop(largestCoordinate(lines, 1, 0)),
+      lastIteration,
+      niceTop(largestValue(lines)),
       160,
     ),
   ];
@@ -117,6 +119,7 @@ export function renderHistoryChart(run: RunPayload, population: boolean): MoveMa
       drawChart(
         byId<SVGSVGElement>("probability-chart"),
         [{ points: probabilities, className: "series series-probability" }],
+        lastIteration,
         1,
         110,
       ),
