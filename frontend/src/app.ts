@@ -1,10 +1,10 @@
 import { loadExperiment, loadFileList } from "./api";
 import { renderHistoryChart } from "./chart";
 import { byId, option, showMessage } from "./dom";
-import { renderInfo } from "./info";
+import { renderRunDetails, renderStep } from "./info";
 import { renderShip } from "./ship";
 import { buildStateTimeline, type TimelineEntry } from "./timeline";
-import type { ExperimentPayload, FileEntry, RunPayload } from "./types";
+import type { ExperimentPayload, FileEntry, HistoryEntry } from "./types";
 
 export async function main(): Promise<void> {
   const fileSelect = byId<HTMLSelectElement>("file-select");
@@ -12,29 +12,31 @@ export async function main(): Promise<void> {
   const ship = byId<SVGSVGElement>("ship");
   let files: FileEntry[] = [];
   let experiment: ExperimentPayload | undefined;
-  let run: RunPayload | undefined;
   let timeline: TimelineEntry[] = [];
+  let records = new Map<number, HistoryEntry>();
   let index = 0;
   let latestRequest = 0;
   let moveMarker = (_iteration: number): void => {};
 
   function render(): void {
     const entry = timeline[index];
-    if (experiment === undefined || run === undefined || entry === undefined) {
+    if (experiment === undefined || entry === undefined) {
       return;
     }
     renderShip(ship, entry, experiment.problem);
-    renderInfo(experiment, run, timeline, index);
+    renderStep(experiment, entry, records.get(entry.iteration), index, timeline.length - 1);
     moveMarker(entry.iteration);
   }
 
   function selectRun(): void {
-    run = experiment?.runs[runSelect.selectedIndex];
-    if (run === undefined) {
+    const run = experiment?.runs[runSelect.selectedIndex];
+    if (experiment === undefined || run === undefined) {
       return;
     }
     timeline = buildStateTimeline(run);
+    records = new Map(run.history.map((record) => [record.iteration, record]));
     moveMarker = renderHistoryChart(run);
+    renderRunDetails(experiment, run);
     index = 0;
     render();
   }

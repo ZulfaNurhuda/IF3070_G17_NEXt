@@ -1,6 +1,6 @@
 import { byId } from "./dom";
 import type { TimelineEntry } from "./timeline";
-import type { ChangePayload, ExperimentPayload, RunPayload } from "./types";
+import type { ChangePayload, ExperimentPayload, HistoryEntry, RunPayload } from "./types";
 
 function describeChange(change: ChangePayload): string {
   const { from, to } = change;
@@ -18,6 +18,9 @@ function describeChange(change: ChangePayload): string {
 }
 
 function formatValue(value: unknown): string {
+  if (value === null) {
+    return "otomatis";
+  }
   if (typeof value === "number") {
     return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
   }
@@ -37,7 +40,7 @@ function describeStep(entry: TimelineEntry, index: number): string {
   return entry.changes.map(describeChange).join("; ");
 }
 
-function describeNote(record: RunPayload["history"][number] | undefined): string {
+function describeNote(record: HistoryEntry | undefined): string {
   if (record?.acceptance_probability !== undefined) {
     return `Peluang penerimaan: ${formatValue(record.acceptance_probability)}`;
   }
@@ -47,7 +50,7 @@ function describeNote(record: RunPayload["history"][number] | undefined): string
   return "";
 }
 
-function renderDetails(experiment: ExperimentPayload, run: RunPayload): void {
+export function renderRunDetails(experiment: ExperimentPayload, run: RunPayload): void {
   const details: [string, unknown][] = [
     ["algorithm", experiment.algorithm],
     ["objective", experiment.objective],
@@ -69,18 +72,13 @@ function renderDetails(experiment: ExperimentPayload, run: RunPayload): void {
   );
 }
 
-export function renderInfo(
+export function renderStep(
   experiment: ExperimentPayload,
-  run: RunPayload,
-  timeline: TimelineEntry[],
+  entry: TimelineEntry,
+  record: HistoryEntry | undefined,
   index: number,
+  lastIndex: number,
 ): void {
-  const entry = timeline[index];
-  if (entry === undefined) {
-    return;
-  }
-  const record = run.history.find((item) => item.iteration === entry.iteration);
-  const value = index === 0 ? run.initial_state.value : record?.value;
   const vehicles = experiment.problem.vehicles;
   const weight = vehicles.reduce(
     (sum, vehicle) => sum + (entry.placements.has(vehicle.id) ? vehicle.weight : 0),
@@ -92,11 +90,10 @@ export function renderInfo(
   byId("unit-label").textContent =
     experiment.algorithm === "genetic-algorithm" ? "Generasi" : "Iterasi";
   byId("iteration").textContent = String(entry.iteration);
-  byId("value").textContent = value === undefined ? "-" : formatValue(value);
+  byId("value").textContent = record === undefined ? "-" : formatValue(record.value);
   byId("weight").textContent = `Berat ${weight} dari ${experiment.problem.ship.max_capacity}`;
   byId("change").textContent = describeStep(entry, index);
   byId("note").textContent = describeNote(record);
   byId("outside").textContent = outside.length > 0 ? outside.join(", ") : "Semua terangkut";
-  byId("step-label").textContent = `Step ${index} dari ${timeline.length - 1}`;
-  renderDetails(experiment, run);
+  byId("step-label").textContent = `Step ${index} dari ${lastIndex}`;
 }
