@@ -6,8 +6,9 @@ from typing import TypedDict
 
 from src.algorithms.base import HistoryRecord
 from src.algorithms.registry import REGISTRY
+from src.core.evaluator import loaded_vehicles
 from src.core.models import Change, Placement, Problem, Ship, State, Vehicle
-from src.core.objectives import OBJECTIVES, total_shipping_fee
+from src.core.objectives import OBJECTIVES
 from src.experiments.runner import ExperimentResult, RunRecord
 
 
@@ -152,7 +153,9 @@ def state_payload(state: State, problem: Problem) -> StatePayload:
         "placements": placements,
         "outside": outside,
         "value": problem.value(state),
-        "total_shipping_fee": total_shipping_fee(state, problem),
+        "total_shipping_fee": float(
+            sum(vehicle.shipping_fee for vehicle in loaded_vehicles(state, problem))
+        ),
     }
 
 
