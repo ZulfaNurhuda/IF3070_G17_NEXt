@@ -26,8 +26,11 @@ async function listOutputFiles(): Promise<FileEntry[]> {
   for (const folder of FOLDERS) {
     const names = await readdir(join(OUTPUT_DIRECTORY, folder)).catch(() => []);
     for (const name of names) {
-      if (SAFE_NAME.test(name)) {
-        entries.push({ name, folder, created_at: await createdAt(folder, name) });
+      const created = SAFE_NAME.test(name)
+        ? await createdAt(folder, name).catch(() => undefined)
+        : undefined;
+      if (created !== undefined) {
+        entries.push({ name, folder, created_at: created });
       }
     }
   }
