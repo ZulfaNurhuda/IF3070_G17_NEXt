@@ -34,6 +34,20 @@ def crossover(first: State, second: State, problem: Problem, rng: random.Random)
     return place_in_order(problem, genes)
 
 
+def best_index(fitness: Sequence[float]) -> int:
+    return max(range(len(fitness)), key=fitness.__getitem__)
+
+
+def generation_record(generation: int, fitness: Sequence[float]) -> HistoryRecord:
+    maximum_value = max(fitness)
+    return HistoryRecord(
+        iteration=generation,
+        value=maximum_value,
+        maximum_value=maximum_value,
+        average_value=sum(fitness) / len(fitness),
+    )
+
+
 def mutate(state: State, problem: Problem, rng: random.Random) -> State:
     successor = random_successor(state, problem, rng)
     return state if successor is None else successor[1]
@@ -59,16 +73,9 @@ class GeneticAlgorithm:
         population = [random_state(problem, rng) for _ in range(self.population_size)]
         fitness = [problem.value(state) for state in population]
         evaluations = len(population)
-        initial_best = population[max(range(len(population)), key=lambda index: fitness[index])]
+        initial_best = population[best_index(fitness)]
         previous_best = initial_best
-        history = [
-            HistoryRecord(
-                iteration=0,
-                value=max(fitness),
-                maximum_value=max(fitness),
-                average_value=sum(fitness) / len(fitness),
-            )
-        ]
+        history = [generation_record(0, fitness)]
         steps: list[Step] = []
 
         for generation in range(1, self.generations + 1):
@@ -90,17 +97,8 @@ class GeneticAlgorithm:
 
             evaluations += len(next_population) - len(elite_indices)
             population, fitness = next_population, next_fitness
-            best_index = max(range(len(population)), key=lambda index: fitness[index])
-            current_best = population[best_index]
-            maximum_value = fitness[best_index]
-            history.append(
-                HistoryRecord(
-                    iteration=generation,
-                    value=maximum_value,
-                    maximum_value=maximum_value,
-                    average_value=sum(fitness) / len(fitness),
-                )
-            )
+            current_best = population[best_index(fitness)]
+            history.append(generation_record(generation, fitness))
             steps.append(Step(generation, previous_best.diff(current_best)))
             previous_best = current_best
 
