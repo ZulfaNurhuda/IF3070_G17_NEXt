@@ -43,6 +43,7 @@ export async function serveOutputFile(folder: string, name: string): Promise<Res
 }
 
 Bun.serve({
+  hostname: "127.0.0.1",
   port: PORT,
   routes: {
     "/": index,
