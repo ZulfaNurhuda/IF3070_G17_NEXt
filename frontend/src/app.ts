@@ -35,8 +35,9 @@ export async function main(): Promise<void> {
     }
     timeline = buildStateTimeline(run);
     records = new Map(run.history.map((record) => [record.iteration, record]));
-    moveMarker = renderHistoryChart(run);
-    renderRunDetails(experiment, run);
+    const population = run.history.some((record) => record.average_value !== undefined);
+    moveMarker = renderHistoryChart(run, population);
+    renderRunDetails(experiment, run, population);
     index = 0;
     render();
   }

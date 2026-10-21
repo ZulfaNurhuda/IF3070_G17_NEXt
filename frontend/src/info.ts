@@ -44,13 +44,18 @@ function describeNote(record: HistoryEntry | undefined): string {
   if (record?.acceptance_probability !== undefined) {
     return `Peluang penerimaan: ${formatValue(record.acceptance_probability)}`;
   }
-  if (record?.maximum_value !== undefined && record.average_value !== undefined) {
-    return `Maksimum ${formatValue(record.maximum_value)}, rata-rata ${formatValue(record.average_value)}`;
+  if (record?.average_value !== undefined) {
+    return `Maksimum ${formatValue(record.value)}, rata-rata ${formatValue(record.average_value)}`;
   }
   return "";
 }
 
-export function renderRunDetails(experiment: ExperimentPayload, run: RunPayload): void {
+export function renderRunDetails(
+  experiment: ExperimentPayload,
+  run: RunPayload,
+  population: boolean,
+): void {
+  byId("unit-label").textContent = population ? "Generasi" : "Iterasi";
   const details: [string, unknown][] = [
     ["algorithm", experiment.algorithm],
     ["objective", experiment.objective],
@@ -87,8 +92,6 @@ export function renderStep(
   const outside = vehicles
     .filter((vehicle) => !entry.placements.has(vehicle.id))
     .map((vehicle) => vehicle.id);
-  byId("unit-label").textContent =
-    experiment.algorithm === "genetic-algorithm" ? "Generasi" : "Iterasi";
   byId("iteration").textContent = String(entry.iteration);
   byId("value").textContent = record === undefined ? "-" : formatValue(record.value);
   byId("weight").textContent = `Berat ${weight} dari ${experiment.problem.ship.max_capacity}`;

@@ -1,5 +1,5 @@
 import { byId, svgElement } from "./dom";
-import type { RunPayload } from "./types";
+import type { HistoryEntry, RunPayload } from "./types";
 
 interface ChartLine {
   points: [number, number][];
@@ -73,43 +73,29 @@ function drawChart(
   };
 }
 
-function valueLines(run: RunPayload): { lines: ChartLine[]; isPopulation: boolean } {
-  const history = run.history;
-  const isPopulation = history.some(
-    (entry) => entry.maximum_value !== undefined && entry.average_value !== undefined,
-  );
-  if (!isPopulation) {
-    const points = history.map((entry): [number, number] => [entry.iteration, entry.value]);
-    return { lines: [{ points, className: "series series-main" }], isPopulation };
+function valueLines(history: HistoryEntry[], population: boolean): ChartLine[] {
+  const lines: ChartLine[] = [
+    {
+      points: history.map((entry): [number, number] => [entry.iteration, entry.value]),
+      className: "series series-main",
+    },
+  ];
+  if (population) {
+    lines.push({
+      points: history.map((entry): [number, number] => [entry.iteration, entry.average_value ?? 0]),
+      className: "series series-secondary",
+    });
   }
-  return {
-    isPopulation,
-    lines: [
-      {
-        points: history.map((entry): [number, number] => [
-          entry.iteration,
-          entry.maximum_value ?? entry.value,
-        ]),
-        className: "series series-main",
-      },
-      {
-        points: history.map((entry): [number, number] => [
-          entry.iteration,
-          entry.average_value ?? 0,
-        ]),
-        className: "series series-secondary",
-      },
-    ],
-  };
+  return lines;
 }
 
-export function renderHistoryChart(run: RunPayload): MoveMarker {
-  const { lines, isPopulation } = valueLines(run);
+export function renderHistoryChart(run: RunPayload, population: boolean): MoveMarker {
+  const lines = valueLines(run.history, population);
   const largest = lines.reduce(
     (highest, line) => line.points.reduce((inner, [, y]) => Math.max(inner, y), highest),
     0,
   );
-  byId("chart-title").textContent = isPopulation
+  byId("chart-title").textContent = population
     ? "Nilai maksimum (garis) dan rata-rata (putus-putus) populasi"
     : "Nilai terhadap iterasi";
   const markers = [drawChart(byId<SVGSVGElement>("history-chart"), lines, niceTop(largest), 160)];

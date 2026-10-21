@@ -48,7 +48,6 @@ export interface HistoryEntry {
   iteration: number;
   value: number;
   acceptance_probability?: number;
-  maximum_value?: number;
   average_value?: number;
 }
 
