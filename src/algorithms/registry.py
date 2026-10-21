@@ -24,8 +24,10 @@ def create_algorithm(name: str, parameters: Mapping[str, object]) -> Algorithm:
     #   Parameter yang tidak diisi memakai default dataclass (random-restart sudah
     #   default ke steepest-ascent; simulated-annealing menghitung sendiri suhu yang
     #   bernilai None di awal run). Aturan algoritma bersarang berlaku umum, bukan khusus
-    #   random-restart: nilai parameter yang berupa nama algoritma (string kunci REGISTRY)
-    #   atau mapping {"algorithm": <nama>, ...parameter lain} dibuat lewat panggilan
+    #   random-restart: untuk setiap field dataclass yang bertipe Algorithm (saat ini
+    #   hanya inner), nilainya boleh berupa nama algoritma (kunci REGISTRY) atau mapping
+    #   {"algorithm": <nama>, ...parameter lain}; keduanya dibuat lewat panggilan
     #   create_algorithm rekursif, sehingga bentuk "params" yang ditulis ke JSON hasil
-    #   eksperimen bisa dipakai ulang apa adanya. Nama di dalamnya juga harus divalidasi.
+    #   eksperimen bisa dipakai ulang apa adanya. Nama di dalamnya juga harus divalidasi,
+    #   dan parameter lain yang bertipe string tidak boleh ikut ditafsirkan sebagai nama.
     raise NotImplementedError
