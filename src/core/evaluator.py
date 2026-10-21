@@ -1,7 +1,8 @@
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
-from functools import cache
+from functools import lru_cache
 from itertools import product
+from typing import Final
 
 from src.core.models import (
     Change,
@@ -16,6 +17,8 @@ from src.core.models import (
 )
 
 type Cell = tuple[int, int]
+
+CELL_CACHE_SIZE: Final = 32768
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,7 +48,7 @@ def deck_positions(vehicle: Vehicle, orientation: Orientation, ship: Ship) -> It
     return product(range(limit_x), range(limit_y))
 
 
-@cache
+@lru_cache(maxsize=CELL_CACHE_SIZE)
 def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
     extent_x, extent_y = footprint(vehicle, placement.orientation)
     return frozenset(
