@@ -30,8 +30,8 @@ async function main(): Promise<void> {
     moveMarker(entry.iteration);
   }
 
-  function move(step: number): void {
-    index = Math.min(Math.max(index + step, 0), timeline.length - 1);
+  function goTo(target: number): void {
+    index = Math.min(Math.max(target, 0), timeline.length - 1);
     render();
   }
 
@@ -50,8 +50,7 @@ async function main(): Promise<void> {
     records = nextRecords;
     moveMarker = nextMarker;
     shownRun = runIndex;
-    index = 0;
-    render();
+    goTo(0);
   }
 
   async function selectFile(): Promise<void> {
@@ -90,8 +89,10 @@ async function main(): Promise<void> {
       showMessage(error);
     }
   });
-  byId("step-back").addEventListener("click", () => move(-1));
-  byId("step-next").addEventListener("click", () => move(1));
+  byId("step-first").addEventListener("click", () => goTo(0));
+  byId("step-back").addEventListener("click", () => goTo(index - 1));
+  byId("step-next").addEventListener("click", () => goTo(index + 1));
+  byId("step-last").addEventListener("click", () => goTo(timeline.length - 1));
 
   try {
     files = await loadFileList();
