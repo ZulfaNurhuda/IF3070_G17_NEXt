@@ -1,19 +1,19 @@
 from __future__ import annotations
 
+import math
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from src.algorithms.base import SearchResult
-from src.core.models import Problem
+from src.algorithms.base import HistoryRecord, SearchResult, Step
+from src.core.initial import random_state
+from src.core.models import Move, Problem
+from src.core.neighbors import random_neighbor
 
 
 def acceptance_probability(delta: float, temperature: float) -> float:
-    # TODO: Implementasikan peluang penerimaan move SA.
-    #   Input: delta = value(next) - value(current), temperature > 0.
-    #   Output: min(1.0, e^(delta / temperature)). Untuk delta > 0 langsung kembalikan 1.0
-    #   (hindari overflow math.exp). Nilai ini yang dicatat di history sebagai
-    #   acceptance_probability untuk plot yang diminta spek.
-    raise NotImplementedError
+    if delta > 0:
+        return 1.0
+    return math.exp(delta / temperature)
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,26 +25,93 @@ class SimulatedAnnealing:
     stuck_patience: int = 200
 
     def resolved(self, problem: Problem) -> SimulatedAnnealing:
-        # TODO: Implementasikan pengisian parameter otomatis dari instance.
-        #   Output: SimulatedAnnealing baru (dataclasses.replace) dengan semua field terisi.
-        #   initial_temperature = 2 x rata-rata shipping_fee; minimum_temperature = 0.01 x
-        #   rata-rata shipping_fee; cooling_rate = (minimum_temperature / initial_temperature)
-        #   ** (1 / max_iterations). Nilai yang sudah diberikan pengguna tidak ditimpa.
-        #   Nilai hasil resolusi inilah yang disimpan di params JSON.
-        raise NotImplementedError
+        if not problem.vehicles:
+            raise ValueError("problem tidak memiliki kendaraan")
+        if self.max_iterations < 1:
+            raise ValueError("max_iterations harus minimal 1")
+        average_fee = sum(vehicle.shipping_fee for vehicle in problem.vehicles) / len(
+            problem.vehicles
+        )
+        initial_temperature = self.initial_temperature
+        if initial_temperature is None:
+            initial_temperature = 2.0 * average_fee
+        minimum_temperature = self.minimum_temperature
+        if minimum_temperature is None:
+            minimum_temperature = 0.01 * average_fee
+        cooling_rate = self.cooling_rate
+        if cooling_rate is None:
+            cooling_rate = (minimum_temperature / initial_temperature) ** (1 / self.max_iterations)
+        return replace(
+            self,
+            initial_temperature=initial_temperature,
+            minimum_temperature=minimum_temperature,
+            cooling_rate=cooling_rate,
+        )
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
-        # TODO: Implementasikan SIMULATED-ANNEALING AIMA dengan schedule geometrik.
-        #   Pra-syarat: self sudah resolved(problem), semua field bukan None.
-        #   Langkah: current = random_state; T = initial_temperature; ulangi sampai
-        #   T < minimum_temperature atau iterasi mencapai max_iterations: ambil
-        #   random_neighbor; delta = value(next) - value(current); terima bila delta > 0,
-        #   selain itu terima dengan peluang acceptance_probability(delta, T); lalu
-        #   T = T * cooling_rate. Bila random_neighbor mengembalikan None, iterasi dihitung
-        #   tanpa perubahan. Kembalikan state saat berhenti, bukan best-so-far (sesuai AIMA).
-        #   Catat history (iteration, value, acceptance_probability), steps untuk move yang
-        #   diterima, iterations, evaluations, dan extra: stuck_events, longest_streak,
-        #   best_seen_value.
-        #   Stuck: state tidak berubah selama stuck_patience iterasi berturut-turut = 1
-        #   event; streak yang berlanjut tidak dihitung ulang; move diterima mereset streak.
-        raise NotImplementedError
+        initial_temperature = self.initial_temperature
+        minimum_temperature = self.minimum_temperature
+        cooling_rate = self.cooling_rate
+        if initial_temperature is None or minimum_temperature is None or cooling_rate is None:
+            raise ValueError("SimulatedAnnealing harus resolved terlebih dahulu")
+        current = random_state(problem, rng)
+        initial_state = current
+        current_value = problem.value(current)
+        evaluations = 1
+        temperature = initial_temperature
+        best_seen_value = current_value
+        stuck_streak = 0
+        stuck_events = 0
+        longest_streak = 0
+        iteration = 0
+        steps: list[Step] = []
+        history: list[HistoryRecord] = [
+            HistoryRecord(iteration=0, value=current_value, acceptance_probability=0.0)
+        ]
+        while iteration < self.max_iterations and temperature >= minimum_temperature:
+            iteration += 1
+            move = random_neighbor(current, problem, rng)
+            next_state = current
+            next_value = current_value
+            probability = 0.0
+            accepted_move: Move | None = None
+            if move is not None:
+                next_state = current.apply(move)
+                next_value = problem.value(next_state)
+                evaluations += 1
+                best_seen_value = max(best_seen_value, next_value)
+                delta = next_value - current_value
+                probability = acceptance_probability(delta, temperature)
+                if delta > 0 or rng.random() < probability:
+                    accepted_move = move
+            if accepted_move is not None:
+                current = next_state
+                current_value = next_value
+                steps.append(Step(iteration=iteration, changes=accepted_move))
+                stuck_streak = 0
+            else:
+                stuck_streak += 1
+                if stuck_streak == self.stuck_patience:
+                    stuck_events += 1
+                longest_streak = max(longest_streak, stuck_streak)
+            history.append(
+                HistoryRecord(
+                    iteration=iteration,
+                    value=current_value,
+                    acceptance_probability=probability,
+                )
+            )
+            temperature *= cooling_rate
+        return SearchResult(
+            initial_state=initial_state,
+            final_state=current,
+            iterations=iteration,
+            evaluations=evaluations,
+            history=tuple(history),
+            steps=tuple(steps),
+            extra={
+                "stuck_events": float(stuck_events),
+                "longest_streak": float(longest_streak),
+                "best_seen_value": best_seen_value,
+            },
+        )
