@@ -29,20 +29,14 @@ function footprint(
 }
 
 function gridLines(width: number, length: number): SVGElement[] {
-  const lines: SVGElement[] = [];
-  for (let column = 1; column < width; column++) {
-    const x = 1 + column * CELL;
-    lines.push(
-      svgElement("line", { class: "gridline", x1: x, y1: 1, x2: x, y2: 1 + length * CELL }),
-    );
-  }
-  for (let row = 1; row < length; row++) {
-    const y = 1 + row * CELL;
-    lines.push(
-      svgElement("line", { class: "gridline", x1: 1, y1: y, x2: 1 + width * CELL, y2: y }),
-    );
-  }
-  return lines;
+  const line = (x1: number, y1: number, x2: number, y2: number): SVGElement =>
+    svgElement("line", { class: "gridline", x1, y1, x2, y2 });
+  const columns = Array.from({ length: width - 1 }, (_, index) => 1 + (index + 1) * CELL);
+  const rows = Array.from({ length: length - 1 }, (_, index) => 1 + (index + 1) * CELL);
+  return [
+    ...columns.map((x) => line(x, 1, x, 1 + length * CELL)),
+    ...rows.map((y) => line(1, y, 1 + width * CELL, y)),
+  ];
 }
 
 function vehicleShape(
@@ -85,12 +79,11 @@ export function renderShip(
   const { width, length } = problem.ship;
   svg.setAttribute("viewBox", `0 0 ${width * CELL + 2} ${length * CELL + 2}`);
   const changed = new Set(entry.changes.map((change) => change.id));
-  const vehicles: SVGElement[] = [];
-  problem.vehicles.forEach((vehicle, index) => {
+  const vehicles = problem.vehicles.flatMap((vehicle, index) => {
     const placement = entry.placements.get(vehicle.id);
-    if (placement !== undefined) {
-      vehicles.push(vehicleShape(vehicle, index, placement, changed.has(vehicle.id)));
-    }
+    return placement === undefined
+      ? []
+      : [vehicleShape(vehicle, index, placement, changed.has(vehicle.id))];
   });
   svg.replaceChildren(
     svgElement("rect", {
