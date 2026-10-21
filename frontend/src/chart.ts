@@ -1,8 +1,10 @@
 import { byId, svgElement } from "./dom";
 import type { HistoryEntry, RunPayload } from "./types";
 
+type Point = [number, number];
+
 interface ChartLine {
-  points: [number, number][];
+  points: Point[];
   className: string;
 }
 
@@ -17,6 +19,23 @@ function niceTop(maximum: number): number {
   }
   const magnitude = 10 ** Math.floor(Math.log10(maximum));
   return Math.ceil(maximum / magnitude) * magnitude;
+}
+
+function seriesPoints(
+  history: HistoryEntry[],
+  pick: (entry: HistoryEntry) => number | undefined,
+): Point[] {
+  return history.flatMap((entry): Point[] => {
+    const value = pick(entry);
+    return value === undefined ? [] : [[entry.iteration, value]];
+  });
+}
+
+function largestCoordinate(lines: ChartLine[], axis: 0 | 1, floor: number): number {
+  return lines.reduce(
+    (largest, line) => line.points.reduce((inner, point) => Math.max(inner, point[axis]), largest),
+    floor,
+  );
 }
 
 function horizontalLine(className: string, y: number): SVGElement {
@@ -39,10 +58,7 @@ function drawChart(
   top: number,
   height: number,
 ): MoveMarker {
-  const lastIteration = lines.reduce(
-    (largest, line) => line.points.reduce((inner, [x]) => Math.max(inner, x), largest),
-    1,
-  );
+  const lastIteration = largestCoordinate(lines, 0, 1);
   const toX = (iteration: number): number =>
     MARGIN.left + (iteration / lastIteration) * (WIDTH - MARGIN.left - MARGIN.right);
   const toY = (value: number): number =>
@@ -73,37 +89,28 @@ function drawChart(
   };
 }
 
-function valueLines(history: HistoryEntry[], population: boolean): ChartLine[] {
+export function renderHistoryChart(run: RunPayload, population: boolean): MoveMarker {
   const lines: ChartLine[] = [
-    {
-      points: history.map((entry): [number, number] => [entry.iteration, entry.value]),
-      className: "series series-main",
-    },
+    { points: seriesPoints(run.history, (entry) => entry.value), className: "series series-main" },
   ];
   if (population) {
     lines.push({
-      points: history.map((entry): [number, number] => [entry.iteration, entry.average_value ?? 0]),
+      points: seriesPoints(run.history, (entry) => entry.average_value),
       className: "series series-secondary",
     });
   }
-  return lines;
-}
-
-export function renderHistoryChart(run: RunPayload, population: boolean): MoveMarker {
-  const lines = valueLines(run.history, population);
-  const largest = lines.reduce(
-    (highest, line) => line.points.reduce((inner, [, y]) => Math.max(inner, y), highest),
-    0,
-  );
   byId("chart-title").textContent = population
     ? "Nilai maksimum (garis) dan rata-rata (putus-putus) populasi"
     : "Nilai terhadap iterasi";
-  const markers = [drawChart(byId<SVGSVGElement>("history-chart"), lines, niceTop(largest), 160)];
-  const probabilities = run.history.flatMap((entry): [number, number][] =>
-    entry.acceptance_probability === undefined
-      ? []
-      : [[entry.iteration, entry.acceptance_probability]],
-  );
+  const markers = [
+    drawChart(
+      byId<SVGSVGElement>("history-chart"),
+      lines,
+      niceTop(largestCoordinate(lines, 1, 0)),
+      160,
+    ),
+  ];
+  const probabilities = seriesPoints(run.history, (entry) => entry.acceptance_probability);
   byId("probability-section").hidden = probabilities.length === 0;
   if (probabilities.length > 0) {
     markers.push(
