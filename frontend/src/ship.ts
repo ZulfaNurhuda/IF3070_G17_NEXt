@@ -33,13 +33,13 @@ function gridLines(width: number, length: number): SVGElement[] {
   for (let column = 1; column < width; column++) {
     const x = 1 + column * CELL;
     lines.push(
-      svgElement("line", { class: "ship-gridline", x1: x, y1: 1, x2: x, y2: 1 + length * CELL }),
+      svgElement("line", { class: "gridline", x1: x, y1: 1, x2: x, y2: 1 + length * CELL }),
     );
   }
   for (let row = 1; row < length; row++) {
     const y = 1 + row * CELL;
     lines.push(
-      svgElement("line", { class: "ship-gridline", x1: 1, y1: y, x2: 1 + width * CELL, y2: y }),
+      svgElement("line", { class: "gridline", x1: 1, y1: y, x2: 1 + width * CELL, y2: y }),
     );
   }
   return lines;
