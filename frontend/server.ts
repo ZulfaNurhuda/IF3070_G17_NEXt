@@ -7,7 +7,7 @@ export const OUTPUT_DIRECTORY = join(import.meta.dir, "..", "output");
 export const PORT = Number(Bun.env.PORT ?? 3000);
 
 const FOLDERS = ["final", "scratch"];
-const SAFE_NAME = /^[A-Za-z0-9_.-]+\.json$/;
+const SAFE_NAME = /^(?!.*\.\.)[\w.-]+\.json$/;
 const TIMESTAMP_IN_NAME = /_(\d+)\.json$/;
 
 async function createdAt(folder: string, name: string): Promise<string> {
@@ -32,7 +32,7 @@ export async function listOutputFiles(): Promise<FileEntry[]> {
 }
 
 export async function serveOutputFile(folder: string, name: string): Promise<Response> {
-  if (!FOLDERS.includes(folder) || !SAFE_NAME.test(name) || name.includes("..")) {
+  if (!FOLDERS.includes(folder) || !SAFE_NAME.test(name)) {
     return new Response("Permintaan tidak valid", { status: 400 });
   }
   const file = Bun.file(join(OUTPUT_DIRECTORY, folder, name));
