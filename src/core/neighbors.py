@@ -15,7 +15,7 @@ from src.core.models import (
     Vehicle,
 )
 
-MAX_RANDOM_SUCCESSOR_ATTEMPTS: Final = 100
+MAX_RANDOM_SUCCESSOR_ATTEMPTS: Final = 300
 
 type Successor = tuple[Move, State]
 
@@ -127,4 +127,5 @@ def random_successor(state: State, problem: Problem, rng: random.Random) -> Succ
         move = sampler(state, problem, rng)
         if move is not None and is_valid_move(move, occupancy, problem):
             return move, state.apply(move)
-    return None
+    valid = list(successors(state, problem))
+    return rng.choice(valid) if valid else None
