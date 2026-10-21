@@ -100,8 +100,8 @@ export function renderHistoryChart(run: RunPayload, population: boolean): MoveMa
     });
   }
   byId("chart-title").textContent = population
-    ? "Nilai maksimum (garis) dan rata-rata (putus-putus) populasi"
-    : "Nilai terhadap iterasi";
+    ? "Nilai objective maksimum (garis) dan rata-rata (putus-putus) populasi"
+    : "Nilai objective terhadap iterasi";
   const lastIteration = Math.max(1, run.iterations);
   const markers = [
     drawChart(
