@@ -10,6 +10,9 @@ from src.core.models import Problem, State
 from src.core.neighbors import random_successor
 
 TEMPERATURE_SAMPLES: Final = 100
+INITIAL_TEMPERATURE_FACTOR: Final = 2.0
+MINIMUM_TEMPERATURE_FACTOR: Final = 0.01
+TEMPERATURE_RATIO: Final = MINIMUM_TEMPERATURE_FACTOR / INITIAL_TEMPERATURE_FACTOR
 
 
 def acceptance_probability(delta: float, temperature: float) -> float:
@@ -34,6 +37,15 @@ def temperature_scale(state: State, problem: Problem, rng: random.Random) -> tup
 
 
 @dataclass(frozen=True, slots=True)
+class Temperatures:
+    initial: float
+    minimum: float
+    cooling_rate: float
+    scale: float | None
+    samples: int
+
+
+@dataclass(frozen=True, slots=True)
 class SimulatedAnnealing:
     initial_temperature: float | None = None
     minimum_temperature: float | None = None
@@ -41,39 +53,44 @@ class SimulatedAnnealing:
     cooling_rate: float | None = None
     stuck_patience: int = 200
 
-    def schedule(self, scale: float) -> tuple[float, float, float]:
-        if self.max_iterations < 1:
-            raise ValueError("max_iterations harus minimal 1")
-        if self.stuck_patience < 1:
-            raise ValueError("stuck_patience harus minimal 1")
-        initial_temperature = self.initial_temperature
-        if initial_temperature is None:
-            initial_temperature = 2.0 * scale
-        minimum_temperature = self.minimum_temperature
-        if minimum_temperature is None:
-            minimum_temperature = 0.01 * scale
-        if not 0 < minimum_temperature < initial_temperature < math.inf:
+    def temperatures(self, state: State, problem: Problem, rng: random.Random) -> Temperatures:
+        initial = self.initial_temperature
+        minimum = self.minimum_temperature
+        scale: float | None = None
+        samples = 0
+        if initial is None:
+            if minimum is None:
+                scale, samples = temperature_scale(state, problem, rng)
+                initial = INITIAL_TEMPERATURE_FACTOR * scale
+                minimum = MINIMUM_TEMPERATURE_FACTOR * scale
+            else:
+                initial = minimum / TEMPERATURE_RATIO
+        elif minimum is None:
+            minimum = initial * TEMPERATURE_RATIO
+        if not 0 < minimum < initial < math.inf:
             raise ValueError(
                 "suhu harus berhingga dan memenuhi 0 < minimum_temperature < initial_temperature"
             )
         cooling_rate = self.cooling_rate
         if cooling_rate is None:
-            cooling_rate = (minimum_temperature / initial_temperature) ** (1 / self.max_iterations)
+            cooling_rate = (minimum / initial) ** (1 / self.max_iterations)
         if not 0 < cooling_rate < 1:
             raise ValueError("cooling_rate harus berada di antara 0 dan 1")
-        return initial_temperature, minimum_temperature, cooling_rate
+        return Temperatures(initial, minimum, cooling_rate, scale, samples)
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
+        if self.max_iterations < 1:
+            raise ValueError("max_iterations harus minimal 1")
+        if self.stuck_patience < 1:
+            raise ValueError("stuck_patience harus minimal 1")
         current = random_state(problem, rng)
         initial_state = current
         current_value = problem.value(current)
-        evaluations = 1
-        scale = 1.0
-        if self.initial_temperature is None or self.minimum_temperature is None:
-            scale, sampled = temperature_scale(current, problem, rng)
-            evaluations += sampled
-        initial_temperature, minimum_temperature, cooling_rate = self.schedule(scale)
-        temperature = initial_temperature
+        schedule = self.temperatures(current, problem, rng)
+        evaluations = 1 + schedule.samples
+        minimum_temperature = schedule.minimum
+        cooling_rate = schedule.cooling_rate
+        temperature = schedule.initial
         best_seen_value = current_value
         stuck_streak = 0
         stuck_events = 0
@@ -111,6 +128,17 @@ class SimulatedAnnealing:
                 )
             )
             temperature *= cooling_rate
+        extra = {
+            "stuck_events": float(stuck_events),
+            "stuck_frequency": stuck_events / iteration if iteration else 0.0,
+            "longest_streak": float(longest_streak),
+            "best_seen_value": best_seen_value,
+            "initial_temperature": schedule.initial,
+            "minimum_temperature": minimum_temperature,
+            "cooling_rate": cooling_rate,
+        }
+        if schedule.scale is not None:
+            extra["temperature_scale"] = schedule.scale
         return SearchResult(
             initial_state=initial_state,
             final_state=current,
@@ -118,14 +146,5 @@ class SimulatedAnnealing:
             evaluations=evaluations,
             history=tuple(history),
             steps=tuple(steps),
-            extra={
-                "stuck_events": float(stuck_events),
-                "stuck_frequency": stuck_events / iteration if iteration else 0.0,
-                "longest_streak": float(longest_streak),
-                "best_seen_value": best_seen_value,
-                "temperature_scale": scale,
-                "initial_temperature": initial_temperature,
-                "minimum_temperature": minimum_temperature,
-                "cooling_rate": cooling_rate,
-            },
+            extra=extra,
         )
