@@ -122,7 +122,6 @@ class SimulatedAnnealing:
                 HistoryRecord(
                     iteration=iteration,
                     value=current_value,
-                    acceptance_probability=probability,
                     metrics={"acceptance_probability": probability},
                 )
             )

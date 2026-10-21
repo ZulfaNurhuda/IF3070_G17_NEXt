@@ -12,8 +12,6 @@ type Unit = Literal["iteration", "generation"]
 class HistoryRecord:
     iteration: int
     value: float
-    acceptance_probability: float | None = None
-    average_value: float | None = None
     metrics: Mapping[str, float] = field(default_factory=dict)
 
 
