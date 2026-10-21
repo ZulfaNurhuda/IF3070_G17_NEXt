@@ -8,9 +8,9 @@ class ExperimentConfig:
     name: str
     algorithm: str
     parameters: Mapping[str, object]
-    runs: int = 3
 
 
+RUNS_PER_CONFIGURATION: Final = 3
 OFFICIAL_EXPERIMENTS: Final[tuple[ExperimentConfig, ...]] = (
     ExperimentConfig("steepest-ascent", "steepest-ascent", {}),
     ExperimentConfig("sideways-move", "sideways-move", {"max_sideways": 100}),
