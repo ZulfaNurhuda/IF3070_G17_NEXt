@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterator
 from itertools import accumulate, chain, combinations
 from typing import Final
 
-from src.core.evaluator import footprint, is_valid_move, occupancy_of
+from src.core.evaluator import deck_positions, is_valid_move, occupancy_of
 from src.core.models import (
     ORIENTATIONS,
     Change,
@@ -59,12 +59,10 @@ def relocation_candidates(state: State, problem: Problem) -> Iterator[Move]:
             orientations = (current.orientation,)
             yield (Change(vehicle.id, current, None),)
         for orientation in orientations:
-            extent_x, extent_y = footprint(vehicle, orientation)
-            for x in range(ship.width - extent_x + 1):
-                for y in range(ship.length - extent_y + 1):
-                    target = Placement(x, y, orientation)
-                    if target != current:
-                        yield (Change(vehicle.id, current, target),)
+            for x, y in deck_positions(vehicle, orientation, ship):
+                target = Placement(x, y, orientation)
+                if target != current:
+                    yield (Change(vehicle.id, current, target),)
 
 
 def swap_candidates(state: State, problem: Problem) -> Iterator[Move]:
