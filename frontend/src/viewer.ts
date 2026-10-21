@@ -1,8 +1,7 @@
 import { buildStateTimeline, type TimelineEntry } from "./data/timeline";
 import type { ExperimentPayload, HistoryEntry } from "./data/types";
-import { renderHistoryChart } from "./view/chart/history";
-import { renderRunDetails } from "./view/info/run";
-import { renderStep } from "./view/info/step";
+import { renderHistoryChart } from "./view/chart";
+import { renderRunDetails, renderStep } from "./view/info";
 import { renderShip } from "./view/ship";
 
 export interface Viewer {
