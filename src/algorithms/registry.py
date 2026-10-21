@@ -4,7 +4,8 @@ from typing import Final, get_type_hints
 
 from src.algorithms.base import Algorithm
 from src.algorithms.genetic_algorithm import GeneticAlgorithm
-from src.algorithms.hill_climbing import RandomRestart, SidewaysMove, SteepestAscent, Stochastic
+from src.algorithms.hill_climbing import SidewaysMove, SteepestAscent, Stochastic
+from src.algorithms.random_restart import RandomRestart
 from src.algorithms.simulated_annealing import SimulatedAnnealing
 
 REGISTRY: Final[dict[str, Callable[..., Algorithm]]] = {
