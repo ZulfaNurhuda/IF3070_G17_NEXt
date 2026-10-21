@@ -11,7 +11,6 @@ class HistoryRecord:
     iteration: int
     value: float
     acceptance_probability: float | None = None
-    maximum_value: float | None = None
     average_value: float | None = None
 
 

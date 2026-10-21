@@ -39,12 +39,8 @@ def best_index(fitness: Sequence[float]) -> int:
 
 
 def generation_record(generation: int, fitness: Sequence[float]) -> HistoryRecord:
-    maximum_value = max(fitness)
     return HistoryRecord(
-        iteration=generation,
-        value=maximum_value,
-        maximum_value=maximum_value,
-        average_value=sum(fitness) / len(fitness),
+        iteration=generation, value=max(fitness), average_value=sum(fitness) / len(fitness)
     )
 
 
