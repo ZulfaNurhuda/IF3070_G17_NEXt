@@ -1,6 +1,8 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from functools import cache
+from itertools import product
+from typing import Final
 
 from src.core.models import (
     Change,
@@ -23,7 +25,7 @@ class Occupancy:
     weight: int
 
 
-EMPTY_OCCUPANCY = Occupancy({}, 0)
+EMPTY_OCCUPANCY: Final = Occupancy({}, 0)
 
 
 def footprint(vehicle: Vehicle, orientation: Orientation) -> tuple[int, int]:
@@ -32,9 +34,19 @@ def footprint(vehicle: Vehicle, orientation: Orientation) -> tuple[int, int]:
     return vehicle.length, vehicle.width
 
 
+def placement_limits(vehicle: Vehicle, orientation: Orientation, ship: Ship) -> tuple[int, int]:
+    extent_x, extent_y = footprint(vehicle, orientation)
+    return ship.width - extent_x + 1, ship.length - extent_y + 1
+
+
 def fits_on_deck(vehicle: Vehicle, placement: Placement, ship: Ship) -> bool:
-    extent_x, extent_y = footprint(vehicle, placement.orientation)
-    return 0 <= placement.x <= ship.width - extent_x and 0 <= placement.y <= ship.length - extent_y
+    limit_x, limit_y = placement_limits(vehicle, placement.orientation, ship)
+    return 0 <= placement.x < limit_x and 0 <= placement.y < limit_y
+
+
+def deck_positions(vehicle: Vehicle, orientation: Orientation, ship: Ship) -> Iterator[Cell]:
+    limit_x, limit_y = placement_limits(vehicle, orientation, ship)
+    return product(range(limit_x), range(limit_y))
 
 
 @cache
