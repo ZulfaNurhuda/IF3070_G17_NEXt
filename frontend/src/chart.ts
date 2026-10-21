@@ -10,6 +10,7 @@ interface ChartLine {
 }
 
 type MoveMarker = (iteration: number) => void;
+type Bounds = [number, number];
 
 const WIDTH = 640;
 const MARGIN = { left: 44, right: 12, top: 12, bottom: 24 };
@@ -29,11 +30,18 @@ function seriesPoints(history: HistoryEntry[], key: string): Point[] {
   });
 }
 
-function largestValue(lines: ChartLine[]): number {
-  return lines.reduce(
-    (largest, line) => line.points.reduce((inner, [, value]) => Math.max(inner, value), largest),
-    0,
-  );
+function valueBounds(lines: ChartLine[]): Bounds {
+  let minimum = 0;
+  let maximum = 0;
+  for (const line of lines) {
+    for (const [, value] of line.points) {
+      minimum = Math.min(minimum, value);
+      maximum = Math.max(maximum, value);
+    }
+  }
+  const top = maximum > 0 ? niceTop(maximum) : 0;
+  const bottom = minimum < 0 ? -niceTop(-minimum) : 0;
+  return top === bottom ? [0, 1] : [bottom, top];
 }
 
 function horizontalLine(className: string, y: number): SVGElement {
@@ -54,16 +62,17 @@ function drawChart(
   svg: SVGSVGElement,
   lines: ChartLine[],
   lastIteration: number,
-  top: number,
+  [bottom, top]: Bounds,
   height: number,
 ): MoveMarker {
   const toX = (iteration: number): number =>
     MARGIN.left + (iteration / lastIteration) * (WIDTH - MARGIN.left - MARGIN.right);
+  const plotBottom = height - MARGIN.bottom;
   const toY = (value: number): number =>
-    MARGIN.top + (1 - value / top) * (height - MARGIN.top - MARGIN.bottom);
+    MARGIN.top + ((top - value) / (top - bottom)) * (plotBottom - MARGIN.top);
   svg.setAttribute("viewBox", `0 0 ${WIDTH} ${height}`);
   const children: SVGElement[] = [horizontalLine("axis", toY(0))];
-  for (const tick of [0, top / 2, top]) {
+  for (const tick of [bottom, bottom < 0 && top > 0 ? 0 : (bottom + top) / 2, top]) {
     children.push(
       horizontalLine("gridline", toY(tick)),
       tickLabel(MARGIN.left - 6, toY(tick) + 4, "end", String(Math.round(tick * 100) / 100)),
@@ -73,7 +82,7 @@ function drawChart(
     const points = line.points.map(([x, y]) => `${toX(x).toFixed(1)},${toY(y).toFixed(1)}`);
     children.push(svgElement("polyline", { class: line.className, points: points.join(" ") }));
   }
-  const marker = svgElement("line", { class: "marker", y1: MARGIN.top, y2: toY(0) });
+  const marker = svgElement("line", { class: "marker", y1: MARGIN.top, y2: plotBottom });
   children.push(
     marker,
     tickLabel(MARGIN.left, height - 6, "start", "0"),
@@ -115,13 +124,7 @@ export function renderHistoryChart(run: RunPayload): MoveMarker {
       : `Nilai objective terhadap ${unit}`;
   const lastIteration = Math.max(1, run.iterations);
   const markers = [
-    drawChart(
-      byId<SVGSVGElement>("history-chart"),
-      lines,
-      lastIteration,
-      niceTop(largestValue(lines)),
-      160,
-    ),
+    drawChart(byId<SVGSVGElement>("history-chart"), lines, lastIteration, valueBounds(lines), 160),
   ];
   byId("metric-charts").replaceChildren(
     ...separate.map((key) => {
@@ -129,7 +132,13 @@ export function renderHistoryChart(run: RunPayload): MoveMarker {
       const lines = [{ points: seriesPoints(run.history, key), className: view.className }];
       const svg = svgElement("svg", { role: "img", "aria-label": view.title }) as SVGSVGElement;
       markers.push(
-        drawChart(svg, lines, lastIteration, view.top ?? niceTop(largestValue(lines)), 110),
+        drawChart(
+          svg,
+          lines,
+          lastIteration,
+          view.top === undefined ? valueBounds(lines) : [0, view.top],
+          110,
+        ),
       );
       return metricBlock(view.title, svg);
     }),
