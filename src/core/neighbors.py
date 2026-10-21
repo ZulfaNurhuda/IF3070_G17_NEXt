@@ -1,6 +1,6 @@
 import random
 from collections.abc import Callable, Iterator
-from itertools import accumulate, chain, combinations
+from itertools import chain, combinations
 from typing import Final
 
 from src.core.evaluator import deck_positions, is_valid_move, occupancy_of
@@ -116,18 +116,14 @@ SAMPLERS: Final[tuple[Sampler, ...]] = (sample_rotation, sample_relocation, samp
 def random_successor(state: State, problem: Problem, rng: random.Random) -> Successor | None:
     vehicle_count = len(problem.vehicles)
     positions = problem.ship.width * problem.ship.length
-    cumulative_weights = list(
-        accumulate(
-            (
-                vehicle_count,
-                vehicle_count * (positions + 1),
-                vehicle_count * (vehicle_count - 1) // 2,
-            )
-        )
+    weights = (
+        vehicle_count,
+        vehicle_count * (positions + 1),
+        vehicle_count * (vehicle_count - 1) // 2,
     )
     occupancy = occupancy_of(state, problem)
     for _ in range(MAX_RANDOM_SUCCESSOR_ATTEMPTS):
-        sampler = rng.choices(SAMPLERS, cum_weights=cumulative_weights)[0]
+        sampler = rng.choices(SAMPLERS, weights=weights)[0]
         move = sampler(state, problem, rng)
         if move is not None and is_valid_move(move, occupancy, problem):
             return move, state.apply(move)
