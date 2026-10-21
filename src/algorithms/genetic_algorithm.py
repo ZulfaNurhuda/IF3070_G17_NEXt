@@ -1,6 +1,7 @@
 import random
 from collections.abc import Sequence
 from dataclasses import dataclass
+from itertools import accumulate
 
 from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.evaluator import place_in_order
@@ -9,16 +10,18 @@ from src.core.models import Placement, Problem, State, VehicleId
 from src.core.neighbors import random_successor
 
 
-def select_parent(
-    population: Sequence[State], fitness: Sequence[float], rng: random.Random
-) -> State:
-    if not population or len(population) != len(fitness):
-        raise ValueError("population dan fitness harus sama-sama tidak kosong dan sejajar")
+def roulette_weights(fitness: Sequence[float]) -> list[float] | None:
     offset = min(0.0, *fitness)
-    weights = [value - offset for value in fitness]
-    if sum(weights) == 0:
+    cumulative_weights = list(accumulate(value - offset for value in fitness))
+    return cumulative_weights if cumulative_weights[-1] > 0 else None
+
+
+def select_parent(
+    population: Sequence[State], cumulative_weights: list[float] | None, rng: random.Random
+) -> State:
+    if cumulative_weights is None:
         return rng.choice(population)
-    return rng.choices(population, weights=weights, k=1)[0]
+    return rng.choices(population, cum_weights=cumulative_weights)[0]
 
 
 def crossover(first: State, second: State, problem: Problem, rng: random.Random) -> State:
@@ -75,9 +78,10 @@ class GeneticAlgorithm:
             next_population = [population[index] for index in elite_indices]
             next_fitness = [fitness[index] for index in elite_indices]
 
+            cumulative_weights = roulette_weights(fitness)
             while len(next_population) < self.population_size:
-                first_parent = select_parent(population, fitness, rng)
-                second_parent = select_parent(population, fitness, rng)
+                first_parent = select_parent(population, cumulative_weights, rng)
+                second_parent = select_parent(population, cumulative_weights, rng)
                 child = crossover(first_parent, second_parent, problem, rng)
                 if rng.random() < self.mutation_rate:
                     child = mutate(child, problem, rng)
