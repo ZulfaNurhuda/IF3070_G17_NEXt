@@ -3,7 +3,7 @@ button {
   font: inherit;
   font-size: 14px;
   color: inherit;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px 12px;
@@ -22,7 +22,7 @@ summary {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 button.primary:hover {

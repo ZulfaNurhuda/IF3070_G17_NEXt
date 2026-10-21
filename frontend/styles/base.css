@@ -8,6 +8,8 @@
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
   --probability: #d97706;
+  --surface: #fff;
+  --on-accent: #fff;
 }
 
 body {
@@ -17,7 +19,7 @@ body {
   max-width: 1000px;
   padding: 0 1.5rem;
   color: var(--text);
-  background: #fff;
+  background: var(--surface);
 }
 
 svg {

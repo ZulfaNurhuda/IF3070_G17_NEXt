@@ -1,10 +1,6 @@
 .ship-frame {
-  fill: #fff;
+  fill: var(--surface);
   stroke: var(--line-strong);
-}
-
-.ship-gridline {
-  stroke: var(--grid);
 }
 
 .hue-0 {
