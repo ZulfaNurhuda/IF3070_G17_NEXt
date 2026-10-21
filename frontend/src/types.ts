@@ -35,7 +35,6 @@ export interface StatePayload {
   outside: string[];
   value: number;
   total_shipping_fee: number;
-  valid: boolean;
 }
 
 export interface ChangePayload {
