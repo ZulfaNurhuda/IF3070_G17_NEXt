@@ -3,7 +3,7 @@ from collections.abc import Callable, Iterator
 from itertools import chain, combinations
 from typing import Final
 
-from src.core.evaluator import is_valid_move, occupancy_of
+from src.core.evaluator import footprint, is_valid_move, occupancy_of
 from src.core.models import Change, Move, Orientation, Placement, Problem, State, Vehicle
 
 MAX_RANDOM_SUCCESSOR_ATTEMPTS: Final = 100
@@ -50,8 +50,9 @@ def relocation_candidates(state: State, problem: Problem) -> Iterator[Move]:
             orientations = (current.orientation,)
             yield (Change(vehicle.id, current, None),)
         for orientation in orientations:
-            for x in range(ship.width):
-                for y in range(ship.length):
+            extent_x, extent_y = footprint(vehicle, orientation)
+            for x in range(ship.width - extent_x + 1):
+                for y in range(ship.length - extent_y + 1):
                     target = Placement(x, y, orientation)
                     if target != current:
                         yield (Change(vehicle.id, current, target),)
