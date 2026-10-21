@@ -65,8 +65,12 @@ export function renderRunDetails(
     ["iterations", run.iterations],
     ["nilai awal", run.initial_state.value],
     ["nilai akhir", run.final_state.value],
-    ...Object.entries(experiment.params),
-    ...Object.entries(run.extra),
+    ...Object.entries(experiment.params).map(([key, value]): [string, unknown] =>
+      value === null && key in run.extra
+        ? [key, `${formatValue(run.extra[key])} (otomatis)`]
+        : [key, value],
+    ),
+    ...Object.entries(run.extra).filter(([key]) => !(key in experiment.params)),
   ];
   byId("details").replaceChildren(
     ...details.map(([key, detail]) => {
