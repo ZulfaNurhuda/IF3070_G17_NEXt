@@ -37,16 +37,16 @@ OFFICIAL_EXPERIMENTS: Final[tuple[ExperimentConfig, ...]] = (
     ExperimentConfig(
         "genetic-algorithm-population-20",
         "genetic-algorithm",
-        {"population_size": 20, "generations": 100},
+        {"population_size": 20, "generations": 150},
     ),
     ExperimentConfig(
         "genetic-algorithm-population-50",
         "genetic-algorithm",
-        {"population_size": 50, "generations": 100},
+        {"population_size": 50, "generations": 150},
     ),
     ExperimentConfig(
         "genetic-algorithm-population-100",
         "genetic-algorithm",
-        {"population_size": 100, "generations": 100},
+        {"population_size": 100, "generations": 150},
     ),
 )
