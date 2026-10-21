@@ -1,6 +1,6 @@
 from typing import Final
 
-from src.core.evaluator import loaded_vehicles
+from src.core.constraints import loaded_vehicles
 from src.core.models import Objective, Problem, State
 
 DEFAULT_OBJECTIVE_NAME: Final = "total-shipping-fee"

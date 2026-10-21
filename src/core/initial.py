@@ -1,6 +1,6 @@
 import random
 
-from src.core.evaluator import place_in_order
+from src.core.constraints import place_in_order
 from src.core.models import ORIENTATIONS, Placement, Problem, State
 
 
