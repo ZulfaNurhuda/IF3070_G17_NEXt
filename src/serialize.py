@@ -60,7 +60,6 @@ class HistoryEntry(TypedDict):
     iteration: int
     value: float
     acceptance_probability: NotRequired[float]
-    maximum_value: NotRequired[float]
     average_value: NotRequired[float]
 
 
@@ -179,8 +178,6 @@ def history_entry(record: HistoryRecord) -> HistoryEntry:
     entry: HistoryEntry = {"iteration": record.iteration, "value": record.value}
     if record.acceptance_probability is not None:
         entry["acceptance_probability"] = record.acceptance_probability
-    if record.maximum_value is not None:
-        entry["maximum_value"] = record.maximum_value
     if record.average_value is not None:
         entry["average_value"] = record.average_value
     return entry
