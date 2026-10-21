@@ -3,7 +3,8 @@ from collections.abc import Callable, Iterator
 from itertools import chain, combinations
 from typing import Final
 
-from src.core.evaluator import deck_positions, is_valid_move, occupancy_of
+from src.core.evaluator import is_valid_move, occupancy_of
+from src.core.geometry import deck_positions
 from src.core.models import (
     ORIENTATIONS,
     Change,

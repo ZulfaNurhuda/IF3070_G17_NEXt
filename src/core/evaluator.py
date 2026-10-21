@@ -1,13 +1,10 @@
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from functools import lru_cache
-from itertools import product
-from typing import Final
 
+from src.core.geometry import Cell, cells_of, placement_limits
 from src.core.models import (
     Change,
     Move,
-    Orientation,
     Placement,
     Problem,
     Ship,
@@ -16,10 +13,6 @@ from src.core.models import (
     VehicleId,
 )
 
-type Cell = tuple[int, int]
-
-CELL_CACHE_SIZE: Final = 32768
-
 
 @dataclass(frozen=True, slots=True)
 class Occupancy:
@@ -27,35 +20,9 @@ class Occupancy:
     weight: int
 
 
-def footprint(vehicle: Vehicle, orientation: Orientation) -> tuple[int, int]:
-    if orientation is Orientation.VERTICAL:
-        return vehicle.width, vehicle.length
-    return vehicle.length, vehicle.width
-
-
-def placement_limits(vehicle: Vehicle, orientation: Orientation, ship: Ship) -> tuple[int, int]:
-    extent_x, extent_y = footprint(vehicle, orientation)
-    return ship.width - extent_x + 1, ship.length - extent_y + 1
-
-
 def fits_on_deck(vehicle: Vehicle, placement: Placement, ship: Ship) -> bool:
     limit_x, limit_y = placement_limits(vehicle, placement.orientation, ship)
     return 0 <= placement.x < limit_x and 0 <= placement.y < limit_y
-
-
-def deck_positions(vehicle: Vehicle, orientation: Orientation, ship: Ship) -> Iterator[Cell]:
-    limit_x, limit_y = placement_limits(vehicle, orientation, ship)
-    return product(range(limit_x), range(limit_y))
-
-
-@lru_cache(maxsize=CELL_CACHE_SIZE)
-def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
-    extent_x, extent_y = footprint(vehicle, placement.orientation)
-    return frozenset(
-        (placement.x + offset_x, placement.y + offset_y)
-        for offset_x in range(extent_x)
-        for offset_y in range(extent_y)
-    )
 
 
 def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
