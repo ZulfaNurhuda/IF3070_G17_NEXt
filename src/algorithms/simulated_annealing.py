@@ -88,8 +88,6 @@ class SimulatedAnnealing:
         current_value = problem.value(current)
         schedule = self.temperatures(current, problem, rng)
         evaluations = 1 + schedule.samples
-        minimum_temperature = schedule.minimum
-        cooling_rate = schedule.cooling_rate
         temperature = schedule.initial
         best_seen_value = current_value
         stuck_streak = 0
@@ -98,7 +96,7 @@ class SimulatedAnnealing:
         iteration = 0
         steps: list[Step] = []
         history = [HistoryRecord(iteration=0, value=current_value)]
-        while iteration < self.max_iterations and temperature >= minimum_temperature:
+        while iteration < self.max_iterations and temperature >= schedule.minimum:
             successor = random_successor(current, problem, rng)
             if successor is None:
                 break
@@ -127,15 +125,15 @@ class SimulatedAnnealing:
                     acceptance_probability=probability,
                 )
             )
-            temperature *= cooling_rate
+            temperature *= schedule.cooling_rate
         extra = {
             "stuck_events": float(stuck_events),
             "stuck_frequency": stuck_events / iteration if iteration else 0.0,
             "longest_streak": float(longest_streak),
             "best_seen_value": best_seen_value,
             "initial_temperature": schedule.initial,
-            "minimum_temperature": minimum_temperature,
-            "cooling_rate": cooling_rate,
+            "minimum_temperature": schedule.minimum,
+            "cooling_rate": schedule.cooling_rate,
         }
         if schedule.scale is not None:
             extra["temperature_scale"] = schedule.scale
