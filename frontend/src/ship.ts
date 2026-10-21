@@ -1,6 +1,6 @@
 import { svgElement } from "./dom";
 import type { TimelineEntry } from "./timeline";
-import type { Orientation, ProblemPayload, VehiclePayload } from "./types";
+import type { Orientation, PlacementPayload, ProblemPayload, VehiclePayload } from "./types";
 
 const CELL = 32;
 const HUE_CLASSES = 12;
@@ -35,14 +35,12 @@ function gridLines(width: number, length: number): SVGElement[] {
 function vehicleShape(
   vehicle: VehiclePayload,
   index: number,
-  x: number,
-  y: number,
-  orientation: Orientation,
+  placement: PlacementPayload,
   changed: boolean,
 ): SVGElement {
-  const { across, down } = footprint(vehicle, orientation);
-  const left = 1 + x * CELL;
-  const top = 1 + y * CELL;
+  const { across, down } = footprint(vehicle, placement.orientation);
+  const left = 1 + placement.x * CELL;
+  const top = 1 + placement.y * CELL;
   const hue = `hue-${index % HUE_CLASSES}`;
   const group = svgElement("g", { class: changed ? `vehicle ${hue} changed` : `vehicle ${hue}` });
   group.append(
@@ -80,16 +78,7 @@ export function renderShip(
   problem.vehicles.forEach((vehicle, index) => {
     const placement = entry.placements.get(vehicle.id);
     if (placement !== undefined) {
-      vehicles.push(
-        vehicleShape(
-          vehicle,
-          index,
-          placement.x,
-          placement.y,
-          placement.orientation,
-          changed.has(vehicle.id),
-        ),
-      );
+      vehicles.push(vehicleShape(vehicle, index, placement, changed.has(vehicle.id)));
     }
   });
   svg.replaceChildren(
