@@ -135,12 +135,8 @@ def load_problem(path: Path, objective_name: str) -> Problem:
     return Problem(ship, vehicles, objective_name, OBJECTIVES[objective_name])
 
 
-def placement_fields(placement: Placement) -> PlacementPayload:
+def placement_payload(placement: Placement) -> PlacementPayload:
     return {"x": placement.x, "y": placement.y, "orientation": placement.orientation.value}
-
-
-def placement_payload(placement: Placement | None) -> PlacementPayload | None:
-    return None if placement is None else placement_fields(placement)
 
 
 def state_payload(state: State, problem: Problem) -> StatePayload:
@@ -151,7 +147,7 @@ def state_payload(state: State, problem: Problem) -> StatePayload:
         if placement is None:
             outside.append(vehicle.id)
         else:
-            placements.append({"id": vehicle.id, **placement_fields(placement)})
+            placements.append({"id": vehicle.id, **placement_payload(placement)})
     return {
         "placements": placements,
         "outside": outside,
@@ -161,10 +157,11 @@ def state_payload(state: State, problem: Problem) -> StatePayload:
 
 
 def change_payload(change: Change) -> ChangePayload:
+    before, after = change.before, change.after
     return {
         "id": change.vehicle_id,
-        "from": placement_payload(change.before),
-        "to": placement_payload(change.after),
+        "from": None if before is None else placement_payload(before),
+        "to": None if after is None else placement_payload(after),
     }
 
 
