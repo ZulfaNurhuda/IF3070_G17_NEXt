@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 type VehicleId = str
@@ -77,6 +77,15 @@ class Problem:
     vehicles: tuple[Vehicle, ...]
     objective_name: str
     objective: Objective
+    vehicle_by_id: Mapping[VehicleId, Vehicle] = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if not self.vehicles:
+            raise ValueError("problem harus memiliki minimal satu kendaraan")
+        vehicle_by_id = {vehicle.id: vehicle for vehicle in self.vehicles}
+        if len(vehicle_by_id) != len(self.vehicles):
+            raise ValueError("id kendaraan harus unik")
+        object.__setattr__(self, "vehicle_by_id", vehicle_by_id)
 
     def value(self, state: State) -> float:
         return self.objective(state, self)
