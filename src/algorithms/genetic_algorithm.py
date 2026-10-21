@@ -14,11 +14,11 @@ def select_parent(
 ) -> State:
     if not population or len(population) != len(fitness):
         raise ValueError("population dan fitness harus sama-sama tidak kosong dan sejajar")
-    if any(value < 0 for value in fitness):
-        raise ValueError("fitness harus non-negatif")
-    if sum(fitness) == 0:
+    offset = min(0.0, *fitness)
+    weights = [value - offset for value in fitness]
+    if sum(weights) == 0:
         return rng.choice(population)
-    return rng.choices(population, weights=fitness, k=1)[0]
+    return rng.choices(population, weights=weights, k=1)[0]
 
 
 def crossover(first: State, second: State, problem: Problem, rng: random.Random) -> State:
