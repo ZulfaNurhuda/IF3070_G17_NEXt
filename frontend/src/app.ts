@@ -17,6 +17,7 @@ async function main(): Promise<void> {
   let index = 0;
   let latestRequest = 0;
   let shownFile = -1;
+  let shownRun = 0;
   let moveMarker = (_iteration: number): void => {};
 
   function render(): void {
@@ -29,18 +30,26 @@ async function main(): Promise<void> {
     moveMarker(entry.iteration);
   }
 
+  function move(step: number): void {
+    index = Math.min(Math.max(index + step, 0), timeline.length - 1);
+    render();
+  }
+
   function showRun(source: ExperimentPayload, runIndex: number): void {
     const run = source.runs[runIndex];
     if (run === undefined) {
       return;
     }
     const nextTimeline = buildStateTimeline(run);
+    const nextRecords = new Map(run.history.map((record) => [record.iteration, record]));
     const population = run.history.some((record) => record.average_value !== undefined);
+    const nextMarker = renderHistoryChart(run, population);
+    renderRunDetails(source, run, population);
     experiment = source;
     timeline = nextTimeline;
-    records = new Map(run.history.map((record) => [record.iteration, record]));
-    moveMarker = renderHistoryChart(run, population);
-    renderRunDetails(source, run, population);
+    records = nextRecords;
+    moveMarker = nextMarker;
+    shownRun = runIndex;
     index = 0;
     render();
   }
@@ -70,11 +79,6 @@ async function main(): Promise<void> {
     }
   }
 
-  function move(step: number): void {
-    index = Math.min(Math.max(index + step, 0), timeline.length - 1);
-    render();
-  }
-
   fileSelect.addEventListener("change", () => void selectFile());
   runSelect.addEventListener("change", () => {
     try {
@@ -82,6 +86,7 @@ async function main(): Promise<void> {
         showRun(experiment, runSelect.selectedIndex);
       }
     } catch (error) {
+      runSelect.selectedIndex = shownRun;
       showMessage(error);
     }
   });
