@@ -6,8 +6,8 @@ from dataclasses import dataclass, replace
 
 from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
-from src.core.models import Move, Problem
-from src.core.neighbors import random_neighbor
+from src.core.models import Problem
+from src.core.neighbors import random_successor
 
 
 def acceptance_probability(delta: float, temperature: float) -> float:
@@ -70,24 +70,21 @@ class SimulatedAnnealing:
         ]
         while iteration < self.max_iterations and temperature >= minimum_temperature:
             iteration += 1
-            move = random_neighbor(current, problem, rng)
-            next_state = current
-            next_value = current_value
+            successor = random_successor(current, problem, rng)
             probability = 0.0
-            accepted_move: Move | None = None
-            if move is not None:
-                next_state = current.apply(move)
+            accepted = False
+            if successor is not None:
+                move, next_state = successor
                 next_value = problem.value(next_state)
                 evaluations += 1
                 best_seen_value = max(best_seen_value, next_value)
                 delta = next_value - current_value
                 probability = acceptance_probability(delta, temperature)
                 if delta > 0 or rng.random() < probability:
-                    accepted_move = move
-            if accepted_move is not None:
-                current = next_state
-                current_value = next_value
-                steps.append(Step(iteration=iteration, changes=accepted_move))
+                    current, current_value = next_state, next_value
+                    steps.append(Step(iteration=iteration, changes=move))
+                    accepted = True
+            if accepted:
                 stuck_streak = 0
             else:
                 stuck_streak += 1
