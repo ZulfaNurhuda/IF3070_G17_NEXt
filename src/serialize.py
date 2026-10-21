@@ -251,7 +251,7 @@ def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
     problem = experiment.problem
     return {
         "problem": problem_payload(problem),
-        "algorithm": experiment.algorithm_name,
+        "algorithm": registry_name(experiment.algorithm),
         "objective": problem.objective_name,
         "params": algorithm_parameters(experiment.algorithm),
         "created_at": experiment.created_at.isoformat(timespec="seconds"),
