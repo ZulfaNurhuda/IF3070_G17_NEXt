@@ -122,29 +122,33 @@ class RandomRestart:
         if self.max_restart < 1:
             raise ValueError("max_restart harus minimal 1")
         results = [self.inner.run(problem, rng) for _ in range(self.max_restart)]
-        offsets: list[int] = []
+        best_index = max(range(len(results)), key=lambda index: results[index].history[-1].value)
+        best = results[best_index]
         history: list[HistoryRecord] = []
+        steps: list[Step] = []
+        reached = results[0].initial_state
         for result in results:
-            offset = len(history)
-            offsets.append(offset)
+            offset = history[-1].iteration + 1 if history else 0
+            if history:
+                steps.append(Step(iteration=offset, changes=reached.diff(result.initial_state)))
             history.extend(
                 replace(record, iteration=record.iteration + offset) for record in result.history
             )
-        best_index = max(range(len(results)), key=lambda index: results[index].history[-1].value)
-        best = results[best_index]
-        steps = tuple(
-            Step(iteration=step.iteration + offsets[best_index], changes=step.changes)
-            for step in best.steps
-        )
-        extra = {"restarts": float(self.max_restart)}
+            steps.extend(replace(step, iteration=step.iteration + offset) for step in result.steps)
+            reached = result.final_state
+        if reached != best.final_state:
+            iteration = history[-1].iteration + 1
+            steps.append(Step(iteration=iteration, changes=reached.diff(best.final_state)))
+            history.append(HistoryRecord(iteration=iteration, value=best.history[-1].value))
+        extra = {"restarts": float(self.max_restart), "best_restart": float(best_index)}
         for index, result in enumerate(results):
             extra[f"iterations_restart_{index}"] = float(result.iterations)
         return SearchResult(
-            initial_state=best.initial_state,
+            initial_state=results[0].initial_state,
             final_state=best.final_state,
-            iterations=sum(result.iterations for result in results),
+            iterations=history[-1].iteration,
             evaluations=sum(result.evaluations for result in results),
             history=tuple(history),
-            steps=steps,
+            steps=tuple(steps),
             extra=extra,
         )
