@@ -3,9 +3,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from src.algorithms.base import HistoryRecord, SearchResult, Step
-from src.core.evaluator import try_place
+from src.core.evaluator import place_in_order
 from src.core.initial import random_state
-from src.core.models import Problem, State
+from src.core.models import Placement, Problem, State, VehicleId
 from src.core.neighbors import random_successor
 
 
@@ -23,15 +23,12 @@ def select_parent(
 
 def crossover(first: State, second: State, problem: Problem, rng: random.Random) -> State:
     crossover_point = rng.randrange(len(problem.vehicles) + 1)
-    child = State({vehicle.id: None for vehicle in problem.vehicles})
+    genes: list[tuple[VehicleId, Placement]] = []
     for index, vehicle in enumerate(problem.vehicles):
-        parent = first if index < crossover_point else second
-        placement = parent.placements[vehicle.id]
+        placement = (first if index < crossover_point else second).placements[vehicle.id]
         if placement is not None:
-            placed = try_place(child, problem, vehicle.id, placement)
-            if placed is not None:
-                child = placed
-    return child
+            genes.append((vehicle.id, placement))
+    return place_in_order(problem, genes)
 
 
 def mutate(state: State, problem: Problem, rng: random.Random) -> State:
