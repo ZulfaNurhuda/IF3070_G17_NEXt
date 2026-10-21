@@ -33,5 +33,9 @@ export function textElement<Tag extends keyof HTMLElementTagNameMap>(
 }
 
 export function showMessage(error: unknown): void {
-  byId("note").textContent = error instanceof Error ? error.message : String(error);
+  byId("error").textContent = error instanceof Error ? error.message : String(error);
+}
+
+export function clearMessage(): void {
+  byId("error").textContent = "";
 }

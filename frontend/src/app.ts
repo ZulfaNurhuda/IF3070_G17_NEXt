@@ -1,6 +1,6 @@
 import { loadExperiment, loadFileList } from "./data/api";
 import type { ExperimentPayload, FileEntry } from "./data/types";
-import { byId, showMessage, textElement } from "./view/dom";
+import { byId, clearMessage, showMessage, textElement } from "./view/dom";
 import { createViewer } from "./viewer";
 
 async function main(): Promise<void> {
@@ -15,6 +15,7 @@ async function main(): Promise<void> {
 
   function showRun(source: ExperimentPayload, runIndex: number): void {
     viewer.show(source, runIndex);
+    clearMessage();
     shown = source;
     shownRun = runIndex;
   }

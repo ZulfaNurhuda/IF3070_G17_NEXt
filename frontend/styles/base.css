@@ -10,6 +10,7 @@
   --probability: #d97706;
   --surface: #fff;
   --on-accent: #fff;
+  --error: #b91c1c;
 }
 
 body {
@@ -35,6 +36,15 @@ svg {
   font-size: 28px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+.error {
+  color: var(--error);
+  margin-top: 16px;
+}
+
+.error:empty {
+  display: none;
 }
 
 :focus-visible {
