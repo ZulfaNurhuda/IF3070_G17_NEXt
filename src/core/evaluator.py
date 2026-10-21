@@ -61,14 +61,18 @@ def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
     )
 
 
+def occupy(owners: dict[Cell, VehicleId], vehicle: Vehicle, placement: Placement) -> int:
+    owners.update(dict.fromkeys(cells_of(vehicle, placement), vehicle.id))
+    return vehicle.weight
+
+
 def occupancy_of(state: State, problem: Problem) -> Occupancy:
     owners: dict[Cell, VehicleId] = {}
     weight = 0
     for vehicle in problem.vehicles:
         placement = state.placements[vehicle.id]
         if placement is not None:
-            weight += vehicle.weight
-            owners.update(dict.fromkeys(cells_of(vehicle, placement), vehicle.id))
+            weight += occupy(owners, vehicle, placement)
     return Occupancy(owners, weight)
 
 
@@ -105,8 +109,6 @@ def place_in_order(problem: Problem, candidates: Iterable[tuple[VehicleId, Place
     for vehicle_id, placement in candidates:
         move = (Change(vehicle_id, None, placement),)
         if is_valid_move(move, Occupancy(owners, weight), problem):
-            vehicle = problem.vehicle_by_id[vehicle_id]
-            weight += vehicle.weight
-            owners.update(dict.fromkeys(cells_of(vehicle, placement), vehicle_id))
+            weight += occupy(owners, problem.vehicle_by_id[vehicle_id], placement)
             placements[vehicle_id] = placement
     return State(placements)
