@@ -18,14 +18,13 @@ class RunRecord:
 @dataclass(frozen=True, slots=True)
 class ExperimentResult:
     problem: Problem
-    algorithm_name: str
     algorithm: Algorithm
     created_at: datetime
     runs: tuple[RunRecord, ...]
 
 
 def execute_runs(
-    problem: Problem, algorithm_name: str, algorithm: Algorithm, runs: int, base_seed: int
+    problem: Problem, algorithm: Algorithm, runs: int, base_seed: int
 ) -> ExperimentResult:
     if runs < 1:
         raise ValueError("runs harus minimal 1")
@@ -37,4 +36,4 @@ def execute_runs(
         result = algorithm.run(problem, random.Random(seed))
         duration = time.perf_counter() - started
         records.append(RunRecord(run_number, seed, duration, result))
-    return ExperimentResult(problem, algorithm_name, algorithm, created_at, tuple(records))
+    return ExperimentResult(problem, algorithm, created_at, tuple(records))
