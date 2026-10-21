@@ -120,6 +120,7 @@ class SimulatedAnnealing:
             steps=tuple(steps),
             extra={
                 "stuck_events": float(stuck_events),
+                "stuck_frequency": stuck_events / iteration if iteration else 0.0,
                 "longest_streak": float(longest_streak),
                 "best_seen_value": best_seen_value,
                 "temperature_scale": scale,
