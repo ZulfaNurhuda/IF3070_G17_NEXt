@@ -13,7 +13,10 @@ const TIMESTAMP_IN_NAME = /_(\d+)\.json$/;
 async function createdAt(folder: string, name: string): Promise<string> {
   const match = TIMESTAMP_IN_NAME.exec(name);
   if (match?.[1] !== undefined) {
-    return new Date(Number(match[1]) * 1000).toISOString();
+    const stamped = new Date(Number(match[1]) * 1000);
+    if (!Number.isNaN(stamped.getTime())) {
+      return stamped.toISOString();
+    }
   }
   return (await stat(join(OUTPUT_DIRECTORY, folder, name))).mtime.toISOString();
 }
