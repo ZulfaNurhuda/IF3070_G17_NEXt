@@ -1,6 +1,6 @@
 import { loadExperiment, loadFileList } from "./api";
 import { renderHistoryChart } from "./chart";
-import { byId, option, showMessage } from "./dom";
+import { byId, showMessage, textElement } from "./dom";
 import { renderRunDetails, renderStep } from "./info";
 import { renderShip } from "./ship";
 import { buildStateTimeline, type TimelineEntry } from "./timeline";
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
       }
       showRun(loaded, 0);
       runSelect.replaceChildren(
-        ...loaded.runs.map((item) => option(`Run ${item.run} (seed ${item.seed})`)),
+        ...loaded.runs.map((item) => textElement("option", `Run ${item.run} (seed ${item.seed})`)),
       );
       shownFile = fileIndex;
     } catch (error) {
@@ -94,7 +94,9 @@ async function main(): Promise<void> {
       showMessage("Belum ada hasil di folder output. Jalankan eksperimen terlebih dahulu.");
       return;
     }
-    fileSelect.replaceChildren(...files.map((entry) => option(`${entry.folder} / ${entry.name}`)));
+    fileSelect.replaceChildren(
+      ...files.map((entry) => textElement("option", `${entry.folder} / ${entry.name}`)),
+    );
     await selectFile();
   } catch (error) {
     showMessage(error);

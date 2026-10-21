@@ -1,4 +1,4 @@
-import { byId } from "./dom";
+import { byId, textElement } from "./dom";
 import type { TimelineEntry } from "./timeline";
 import type { ChangePayload, ExperimentPayload, HistoryEntry, RunPayload } from "./types";
 
@@ -73,11 +73,7 @@ export function renderRunDetails(
     ...Object.entries(run.extra).filter(([key]) => !(key in experiment.params)),
   ];
   byId("details").replaceChildren(
-    ...details.map(([key, detail]) => {
-      const line = document.createElement("div");
-      line.textContent = `${key}: ${formatValue(detail)}`;
-      return line;
-    }),
+    ...details.map(([key, detail]) => textElement("div", `${key}: ${formatValue(detail)}`)),
   );
 }
 

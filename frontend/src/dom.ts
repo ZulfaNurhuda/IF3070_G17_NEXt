@@ -23,8 +23,11 @@ export function svgElement(
   return element;
 }
 
-export function option(text: string): HTMLOptionElement {
-  const element = document.createElement("option");
+export function textElement<Tag extends keyof HTMLElementTagNameMap>(
+  tag: Tag,
+  text: string,
+): HTMLElementTagNameMap[Tag] {
+  const element = document.createElement(tag);
   element.textContent = text;
   return element;
 }
