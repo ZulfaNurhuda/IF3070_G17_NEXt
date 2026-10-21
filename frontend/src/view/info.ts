@@ -1,11 +1,11 @@
-import type { TimelineEntry } from "./data/timeline";
+import type { TimelineEntry } from "../data/timeline";
 import type {
   ChangePayload,
   ExperimentPayload,
   HistoryEntry,
   RunPayload,
   VehiclePayload,
-} from "./data/types";
+} from "../data/types";
 import { byId, textElement } from "./dom";
 import { metricKeys, metricView, unitLabel } from "./metrics";
 

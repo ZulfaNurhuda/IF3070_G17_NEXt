@@ -1,5 +1,5 @@
-import type { TimelineEntry } from "./data/timeline";
-import type { Orientation, PlacementPayload, ProblemPayload, VehiclePayload } from "./data/types";
+import type { TimelineEntry } from "../data/timeline";
+import type { Orientation, PlacementPayload, ProblemPayload, VehiclePayload } from "../data/types";
 import { svgElement } from "./dom";
 
 const CELL = 32;

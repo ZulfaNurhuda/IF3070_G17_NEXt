@@ -1,10 +1,10 @@
-import { renderHistoryChart } from "./chart";
 import { loadExperiment, loadFileList } from "./data/api";
 import { buildStateTimeline, type TimelineEntry } from "./data/timeline";
 import type { ExperimentPayload, FileEntry, HistoryEntry } from "./data/types";
-import { byId, showMessage, textElement } from "./dom";
-import { renderRunDetails, renderStep } from "./info";
-import { renderShip } from "./ship";
+import { renderHistoryChart } from "./view/chart";
+import { byId, showMessage, textElement } from "./view/dom";
+import { renderRunDetails, renderStep } from "./view/info";
+import { renderShip } from "./view/ship";
 
 async function main(): Promise<void> {
   const fileSelect = byId<HTMLSelectElement>("file-select");

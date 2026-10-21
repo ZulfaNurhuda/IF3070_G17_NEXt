@@ -1,4 +1,4 @@
-import type { HistoryEntry } from "./data/types";
+import type { HistoryEntry } from "../data/types";
 
 export interface MetricView {
   label: string;
