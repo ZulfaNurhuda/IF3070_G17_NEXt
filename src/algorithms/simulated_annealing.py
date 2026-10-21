@@ -99,20 +99,20 @@ class SimulatedAnnealing:
         steps: list[Step] = []
         history = [HistoryRecord(iteration=0, value=current_value)]
         while iteration < self.max_iterations and temperature >= minimum_temperature:
+            successor = random_successor(current, problem, rng)
+            if successor is None:
+                break
             iteration += 1
             previous_value = current_value
-            successor = random_successor(current, problem, rng)
-            probability: float | None = None
-            if successor is not None:
-                move, next_state = successor
-                next_value = problem.value(next_state)
-                evaluations += 1
-                best_seen_value = max(best_seen_value, next_value)
-                delta = next_value - current_value
-                probability = acceptance_probability(delta, temperature)
-                if delta > 0 or rng.random() < probability:
-                    current, current_value = next_state, next_value
-                    steps.append(Step(iteration=iteration, changes=move))
+            move, next_state = successor
+            next_value = problem.value(next_state)
+            evaluations += 1
+            best_seen_value = max(best_seen_value, next_value)
+            delta = next_value - current_value
+            probability = acceptance_probability(delta, temperature)
+            if delta > 0 or rng.random() < probability:
+                current, current_value = next_state, next_value
+                steps.append(Step(iteration=iteration, changes=move))
             if current_value == previous_value:
                 stuck_streak += 1
                 if stuck_streak == self.stuck_patience:
