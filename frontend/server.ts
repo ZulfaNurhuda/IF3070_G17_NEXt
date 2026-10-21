@@ -3,8 +3,8 @@ import { join } from "node:path";
 import index from "./index.html";
 import type { FileEntry } from "./src/types";
 
-export const OUTPUT_DIRECTORY = join(import.meta.dir, "..", "output");
-export const PORT = Number(Bun.env.PORT ?? 3000);
+const OUTPUT_DIRECTORY = join(import.meta.dir, "..", "output");
+const PORT = Number(Bun.env.PORT ?? 3000);
 
 const FOLDERS = ["final", "scratch"];
 const SAFE_NAME = /^(?!.*\.\.)[\w.-]+\.json$/;
@@ -18,7 +18,7 @@ async function createdAt(folder: string, name: string): Promise<string> {
   return (await stat(join(OUTPUT_DIRECTORY, folder, name))).mtime.toISOString();
 }
 
-export async function listOutputFiles(): Promise<FileEntry[]> {
+async function listOutputFiles(): Promise<FileEntry[]> {
   const entries: FileEntry[] = [];
   for (const folder of FOLDERS) {
     const names = await readdir(join(OUTPUT_DIRECTORY, folder)).catch(() => []);
@@ -31,7 +31,7 @@ export async function listOutputFiles(): Promise<FileEntry[]> {
   return entries.sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
-export async function serveOutputFile(folder: string, name: string): Promise<Response> {
+async function serveOutputFile(folder: string, name: string): Promise<Response> {
   if (!FOLDERS.includes(folder) || !SAFE_NAME.test(name)) {
     return new Response("Permintaan tidak valid", { status: 400 });
   }
