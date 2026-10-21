@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import cache
 
 from src.core.models import (
     Change,
@@ -36,6 +37,7 @@ def fits_on_deck(vehicle: Vehicle, placement: Placement, ship: Ship) -> bool:
     return 0 <= placement.x <= ship.width - extent_x and 0 <= placement.y <= ship.length - extent_y
 
 
+@cache
 def cells_of(vehicle: Vehicle, placement: Placement) -> frozenset[Cell]:
     extent_x, extent_y = footprint(vehicle, placement.orientation)
     return frozenset(
