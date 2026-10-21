@@ -6,7 +6,7 @@ import { renderShip } from "./ship";
 import { buildStateTimeline, type TimelineEntry } from "./timeline";
 import type { ExperimentPayload, FileEntry, HistoryEntry } from "./types";
 
-export async function main(): Promise<void> {
+async function main(): Promise<void> {
   const fileSelect = byId<HTMLSelectElement>("file-select");
   const runSelect = byId<HTMLSelectElement>("run-select");
   const ship = byId<SVGSVGElement>("ship");
@@ -88,6 +88,4 @@ export async function main(): Promise<void> {
   }
 }
 
-if (typeof document !== "undefined") {
-  void main();
-}
+void main();
