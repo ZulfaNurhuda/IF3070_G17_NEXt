@@ -18,7 +18,8 @@ OUTPUT_ROOT: Final = PROJECT_ROOT / "output"
 DEFAULT_RUNS: Final = 3
 DEFAULT_SEED: Final = 0
 DEFAULT_OUTPUT: Final = "scratch"
-OUTPUT_FOLDERS: Final = ("scratch", "final")
+FINAL_OUTPUT: Final = "final"
+OUTPUT_FOLDERS: Final = (DEFAULT_OUTPUT, FINAL_OUTPUT)
 
 
 def convert_parameter(algorithm: str, key: str, text: str, annotation: object) -> object:
@@ -43,14 +44,11 @@ def parse_parameters(algorithm: str, pairs: Sequence[str]) -> dict[str, object]:
         key, separator, text = pair.partition("=")
         if not separator:
             raise ValueError(f"--param harus berbentuk nama=nilai, bukan '{pair}'")
-        if key not in types:
-            valid_names = ", ".join(types) or "tidak ada"
-            raise ValueError(
-                f"--param {key}: tidak dikenal untuk {algorithm}; pilihan: {valid_names}"
-            )
         if key in parameters:
             raise ValueError(f"--param {key}: diberikan lebih dari sekali")
-        parameters[key] = convert_parameter(algorithm, key, text, types[key])
+        parameters[key] = (
+            convert_parameter(algorithm, key, text, types[key]) if key in types else text
+        )
     return parameters
 
 
@@ -88,7 +86,7 @@ def run_all_command(arguments: argparse.Namespace) -> None:
     total = len(OFFICIAL_EXPERIMENTS)
     results = orchestrate_official_experiments(problem, arguments.seed)
     for number, (config, experiment) in enumerate(results, start=1):
-        path = write_experiment(experiment, OUTPUT_ROOT / "final", config.name)
+        path = write_experiment(experiment, OUTPUT_ROOT / FINAL_OUTPUT, config.name)
         print(f"[{number}/{total}] {config.name} -> {path}", flush=True)
 
 
