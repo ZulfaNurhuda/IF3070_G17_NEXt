@@ -1,9 +1,11 @@
 import random
 from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Protocol
+from dataclasses import dataclass, field
+from typing import Literal, Protocol
 
 from src.core.models import Move, Problem, State
+
+type Unit = Literal["iteration", "generation"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -12,6 +14,7 @@ class HistoryRecord:
     value: float
     acceptance_probability: float | None = None
     average_value: float | None = None
+    metrics: Mapping[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +32,7 @@ class SearchResult:
     history: tuple[HistoryRecord, ...]
     steps: tuple[Step, ...]
     extra: Mapping[str, float]
+    unit: Unit = "iteration"
 
 
 class Algorithm(Protocol):

@@ -155,4 +155,5 @@ class RandomRestart:
             history=tuple(history),
             steps=tuple(steps),
             extra=extra,
+            unit=results[0].unit,
         )
