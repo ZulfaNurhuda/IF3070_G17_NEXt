@@ -1,27 +1,23 @@
 import type { ExperimentPayload, FileEntry } from "./types";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function isFileEntry(value: unknown): value is FileEntry {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "name" in value &&
+    isRecord(value) &&
     typeof value.name === "string" &&
-    "folder" in value &&
     typeof value.folder === "string" &&
-    "created_at" in value &&
     typeof value.created_at === "string"
   );
 }
 
 function isExperiment(value: unknown): value is ExperimentPayload {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "problem" in value &&
-    typeof value.problem === "object" &&
-    "algorithm" in value &&
+    isRecord(value) &&
+    isRecord(value.problem) &&
     typeof value.algorithm === "string" &&
-    "runs" in value &&
     Array.isArray(value.runs) &&
     value.runs.length > 0
   );
