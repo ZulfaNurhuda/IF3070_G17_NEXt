@@ -1,10 +1,11 @@
 import json
 from collections.abc import Mapping
-from dataclasses import asdict, is_dataclass
+from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
 from src.algorithms.base import HistoryRecord
+from src.algorithms.registry import REGISTRY
 from src.core.evaluator import is_valid
 from src.core.models import Change, Placement, Problem, Ship, State, Vehicle
 from src.core.objectives import OBJECTIVES, total_shipping_fee
@@ -232,16 +233,32 @@ def problem_payload(problem: Problem) -> ProblemPayload:
     }
 
 
-def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
-    algorithm: object = experiment.algorithm
+def registry_name(algorithm: object) -> str:
+    for name, factory in REGISTRY.items():
+        if factory is type(algorithm):
+            return name
+    raise ValueError(f"algoritma tidak terdaftar: {type(algorithm).__name__}")
+
+
+def algorithm_parameters(algorithm: object) -> dict[str, object]:
     if not is_dataclass(algorithm) or isinstance(algorithm, type):
         raise TypeError("algoritma harus berupa instance dataclass")
+    parameters: dict[str, object] = {}
+    for field in fields(algorithm):
+        value: object = getattr(algorithm, field.name)
+        if is_dataclass(value) and not isinstance(value, type):
+            value = {"algorithm": registry_name(value), **algorithm_parameters(value)}
+        parameters[field.name] = value
+    return parameters
+
+
+def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
     problem = experiment.problem
     return {
         "problem": problem_payload(problem),
         "algorithm": experiment.algorithm_name,
         "objective": problem.objective_name,
-        "params": asdict(algorithm),
+        "params": algorithm_parameters(experiment.algorithm),
         "created_at": experiment.created_at.isoformat(timespec="seconds"),
         "runs": [run_payload(record, problem) for record in experiment.runs],
     }
