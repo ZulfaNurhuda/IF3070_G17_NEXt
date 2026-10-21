@@ -1,6 +1,6 @@
 import random
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from src.algorithms.base import Algorithm, HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
@@ -114,7 +114,7 @@ class Stochastic:
 
 @dataclass(frozen=True, slots=True)
 class RandomRestart:
-    inner: Algorithm
+    inner: Algorithm = field(default_factory=SteepestAscent)
     max_restart: int = 10
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
