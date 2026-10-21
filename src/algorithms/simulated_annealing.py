@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import math
 import random
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
@@ -24,11 +22,11 @@ class SimulatedAnnealing:
     cooling_rate: float | None = None
     stuck_patience: int = 200
 
-    def resolved(self, problem: Problem) -> SimulatedAnnealing:
-        if not problem.vehicles:
-            raise ValueError("problem tidak memiliki kendaraan")
+    def schedule(self, problem: Problem) -> tuple[float, float, float]:
         if self.max_iterations < 1:
             raise ValueError("max_iterations harus minimal 1")
+        if self.stuck_patience < 1:
+            raise ValueError("stuck_patience harus minimal 1")
         average_fee = sum(vehicle.shipping_fee for vehicle in problem.vehicles) / len(
             problem.vehicles
         )
@@ -38,22 +36,17 @@ class SimulatedAnnealing:
         minimum_temperature = self.minimum_temperature
         if minimum_temperature is None:
             minimum_temperature = 0.01 * average_fee
+        if not 0 < minimum_temperature < initial_temperature:
+            raise ValueError("suhu harus memenuhi 0 < minimum_temperature < initial_temperature")
         cooling_rate = self.cooling_rate
         if cooling_rate is None:
             cooling_rate = (minimum_temperature / initial_temperature) ** (1 / self.max_iterations)
-        return replace(
-            self,
-            initial_temperature=initial_temperature,
-            minimum_temperature=minimum_temperature,
-            cooling_rate=cooling_rate,
-        )
+        if not 0 < cooling_rate < 1:
+            raise ValueError("cooling_rate harus berada di antara 0 dan 1")
+        return initial_temperature, minimum_temperature, cooling_rate
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
-        initial_temperature = self.initial_temperature
-        minimum_temperature = self.minimum_temperature
-        cooling_rate = self.cooling_rate
-        if initial_temperature is None or minimum_temperature is None or cooling_rate is None:
-            raise ValueError("SimulatedAnnealing harus resolved terlebih dahulu")
+        initial_temperature, minimum_temperature, cooling_rate = self.schedule(problem)
         current = random_state(problem, rng)
         initial_state = current
         current_value = problem.value(current)
@@ -110,5 +103,8 @@ class SimulatedAnnealing:
                 "stuck_events": float(stuck_events),
                 "longest_streak": float(longest_streak),
                 "best_seen_value": best_seen_value,
+                "initial_temperature": initial_temperature,
+                "minimum_temperature": minimum_temperature,
+                "cooling_rate": cooling_rate,
             },
         )
