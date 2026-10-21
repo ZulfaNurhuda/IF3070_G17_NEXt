@@ -22,10 +22,9 @@ def select_parent(
 
 
 def crossover(first: State, second: State, problem: Problem, rng: random.Random) -> State:
-    vehicles = sorted(problem.vehicles, key=lambda vehicle: vehicle.id)
-    crossover_point = rng.randrange(len(vehicles) + 1)
-    child = State({vehicle.id: None for vehicle in vehicles})
-    for index, vehicle in enumerate(vehicles):
+    crossover_point = rng.randrange(len(problem.vehicles) + 1)
+    child = State({vehicle.id: None for vehicle in problem.vehicles})
+    for index, vehicle in enumerate(problem.vehicles):
         parent = first if index < crossover_point else second
         placement = parent.placements[vehicle.id]
         if placement is not None:
