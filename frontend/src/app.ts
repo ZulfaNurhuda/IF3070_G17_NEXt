@@ -1,9 +1,10 @@
 import { loadExperiment, loadFileList } from "./data/api";
 import { buildStateTimeline, type TimelineEntry } from "./data/timeline";
 import type { ExperimentPayload, FileEntry, HistoryEntry } from "./data/types";
-import { renderHistoryChart } from "./view/chart";
+import { renderHistoryChart } from "./view/chart/history";
 import { byId, showMessage, textElement } from "./view/dom";
-import { renderRunDetails, renderStep } from "./view/info";
+import { renderRunDetails } from "./view/info/run";
+import { renderStep } from "./view/info/step";
 import { renderShip } from "./view/ship";
 
 async function main(): Promise<void> {
