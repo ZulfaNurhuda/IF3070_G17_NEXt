@@ -4,6 +4,19 @@ import type { Orientation, PlacementPayload, ProblemPayload, VehiclePayload } fr
 
 const CELL = 32;
 const HUE_CLASSES = 12;
+const LABEL_PADDING = 6;
+const GLYPH_WIDTH = 0.6;
+const LABEL_FITS: [number, string][] = [
+  [16, "label-lg"],
+  [13, "label-md"],
+  [11, "label-sm"],
+];
+
+function labelClass(vehicle: VehiclePayload, width: number): string {
+  const fit = (width - LABEL_PADDING) / (vehicle.id.length * GLYPH_WIDTH);
+  const match = LABEL_FITS.find(([minimum]) => fit >= minimum);
+  return `vehicle-label ${match === undefined ? "label-xs" : match[1]}`;
+}
 
 function footprint(
   vehicle: VehiclePayload,
@@ -50,15 +63,13 @@ function vehicleShape(
       y: top + 2,
       width: across * CELL - 4,
       height: down * CELL - 4,
-      rx: 3,
     }),
     svgElement(
       "text",
       {
-        class: "vehicle-label",
+        class: labelClass(vehicle, across * CELL),
         x: left + (across * CELL) / 2,
         y: top + (down * CELL) / 2,
-        "font-size": Math.max(9, Math.min(16, (across * CELL - 6) / (vehicle.id.length * 0.6))),
       },
       vehicle.id,
     ),
