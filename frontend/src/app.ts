@@ -16,6 +16,7 @@ async function main(): Promise<void> {
   let records = new Map<number, HistoryEntry>();
   let index = 0;
   let latestRequest = 0;
+  let shownFile = -1;
   let moveMarker = (_iteration: number): void => {};
 
   function render(): void {
@@ -45,7 +46,8 @@ async function main(): Promise<void> {
   }
 
   async function selectFile(): Promise<void> {
-    const entry = files[fileSelect.selectedIndex];
+    const fileIndex = fileSelect.selectedIndex;
+    const entry = files[fileIndex];
     if (entry === undefined) {
       return;
     }
@@ -59,8 +61,10 @@ async function main(): Promise<void> {
       runSelect.replaceChildren(
         ...loaded.runs.map((item) => option(`Run ${item.run} (seed ${item.seed})`)),
       );
+      shownFile = fileIndex;
     } catch (error) {
       if (request === latestRequest) {
+        fileSelect.selectedIndex = shownFile;
         showMessage(error);
       }
     }
