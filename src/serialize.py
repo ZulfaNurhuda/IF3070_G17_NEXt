@@ -134,13 +134,10 @@ def load_problem(path: Path, objective_name: str) -> Problem:
         raise ValueError(f"objective tidak dikenal: {objective_name}; pilihan: {valid_names}")
     root = expect_mapping(json.loads(path.read_text(encoding="utf-8")), "instance")
     raw_vehicles = root.get("vehicles")
-    if not isinstance(raw_vehicles, list) or not raw_vehicles:
-        raise ValueError("vehicles harus berupa daftar yang tidak kosong")
+    if not isinstance(raw_vehicles, list):
+        raise ValueError("vehicles harus berupa daftar")
     ship = parse_ship(root.get("ship"))
     vehicles = tuple(parse_vehicle(raw, index) for index, raw in enumerate(raw_vehicles))
-    vehicle_ids = [vehicle.id for vehicle in vehicles]
-    if len(set(vehicle_ids)) != len(vehicle_ids):
-        raise ValueError("id kendaraan harus unik")
     return Problem(ship, vehicles, objective_name, OBJECTIVES[objective_name])
 
 
