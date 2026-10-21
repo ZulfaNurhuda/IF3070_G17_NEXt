@@ -3,10 +3,12 @@ from collections.abc import Callable, Iterator
 from itertools import chain, combinations
 from typing import Final
 
-from src.core.evaluator import is_valid
+from src.core.evaluator import is_valid_move, occupancy_of
 from src.core.models import Change, Move, Orientation, Placement, Problem, State, Vehicle
 
-MAX_RANDOM_NEIGHBOR_ATTEMPTS: Final = 100
+MAX_RANDOM_SUCCESSOR_ATTEMPTS: Final = 100
+
+type Successor = tuple[Move, State]
 
 
 def flipped(orientation: Orientation) -> Orientation:
@@ -60,15 +62,20 @@ def swap_candidates(state: State, problem: Problem) -> Iterator[Move]:
     return filter(None, (swap_move(first, second, state) for first, second in pairs))
 
 
-def enumerate_neighbors(state: State, problem: Problem) -> Iterator[Move]:
+def successors(state: State, problem: Problem) -> Iterator[Successor]:
+    occupancy = occupancy_of(state, problem)
     candidates = chain(
         rotation_candidates(state, problem),
         relocation_candidates(state, problem),
         swap_candidates(state, problem),
     )
     for move in candidates:
-        if is_valid(state.apply(move), problem):
-            yield move
+        if is_valid_move(move, occupancy, problem):
+            yield move, state.apply(move)
+
+
+def enumerate_neighbors(state: State, problem: Problem) -> Iterator[Move]:
+    return (move for move, _ in successors(state, problem))
 
 
 type Sampler = Callable[[State, Problem, random.Random], Move | None]
@@ -102,7 +109,7 @@ def sample_swap(state: State, problem: Problem, rng: random.Random) -> Move | No
 SAMPLERS: Final[tuple[Sampler, ...]] = (sample_rotation, sample_relocation, sample_swap)
 
 
-def random_neighbor(state: State, problem: Problem, rng: random.Random) -> Move | None:
+def random_successor(state: State, problem: Problem, rng: random.Random) -> Successor | None:
     vehicle_count = len(problem.vehicles)
     if vehicle_count == 0:
         return None
@@ -112,9 +119,15 @@ def random_neighbor(state: State, problem: Problem, rng: random.Random) -> Move 
         vehicle_count * (positions + 1),
         vehicle_count * (vehicle_count - 1) // 2,
     )
-    for _ in range(MAX_RANDOM_NEIGHBOR_ATTEMPTS):
+    occupancy = occupancy_of(state, problem)
+    for _ in range(MAX_RANDOM_SUCCESSOR_ATTEMPTS):
         sampler = rng.choices(SAMPLERS, weights=weights)[0]
         move = sampler(state, problem, rng)
-        if move is not None and is_valid(state.apply(move), problem):
-            return move
+        if move is not None and is_valid_move(move, occupancy, problem):
+            return move, state.apply(move)
     return None
+
+
+def random_neighbor(state: State, problem: Problem, rng: random.Random) -> Move | None:
+    successor = random_successor(state, problem, rng)
+    return None if successor is None else successor[0]
