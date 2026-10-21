@@ -15,6 +15,7 @@ export async function main(): Promise<void> {
   let run: RunPayload | undefined;
   let timeline: TimelineEntry[] = [];
   let index = 0;
+  let latestRequest = 0;
   let moveMarker = (_iteration: number): void => {};
 
   function render(): void {
@@ -43,7 +44,12 @@ export async function main(): Promise<void> {
     if (entry === undefined) {
       return;
     }
-    experiment = await loadExperiment(entry);
+    const request = ++latestRequest;
+    const loaded = await loadExperiment(entry);
+    if (request !== latestRequest) {
+      return;
+    }
+    experiment = loaded;
     runSelect.replaceChildren(
       ...experiment.runs.map((item) => option(`Run ${item.run} (seed ${item.seed})`)),
     );
