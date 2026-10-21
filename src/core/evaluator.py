@@ -42,13 +42,6 @@ def loaded_vehicles(state: State, problem: Problem) -> tuple[Vehicle, ...]:
     )
 
 
-def vehicle_of(problem: Problem, vehicle_id: VehicleId) -> Vehicle:
-    for vehicle in problem.vehicles:
-        if vehicle.id == vehicle_id:
-            return vehicle
-    raise ValueError(f"kendaraan tidak dikenal: {vehicle_id}")
-
-
 def occupancy_of(state: State, problem: Problem) -> Occupancy:
     owners: dict[Cell, VehicleId] = {}
     weight = 0
@@ -62,7 +55,7 @@ def occupancy_of(state: State, problem: Problem) -> Occupancy:
 
 def is_valid_move(move: Move, occupancy: Occupancy, problem: Problem) -> bool:
     ship = problem.ship
-    moved = [(vehicle_of(problem, change.vehicle_id), change) for change in move]
+    moved = [(problem.vehicle_by_id[change.vehicle_id], change) for change in move]
     weight = occupancy.weight
     for vehicle, change in moved:
         if change.before is not None:
