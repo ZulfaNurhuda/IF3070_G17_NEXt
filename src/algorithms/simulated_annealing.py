@@ -36,8 +36,10 @@ class SimulatedAnnealing:
         minimum_temperature = self.minimum_temperature
         if minimum_temperature is None:
             minimum_temperature = 0.01 * average_fee
-        if not 0 < minimum_temperature < initial_temperature:
-            raise ValueError("suhu harus memenuhi 0 < minimum_temperature < initial_temperature")
+        if not 0 < minimum_temperature < initial_temperature < math.inf:
+            raise ValueError(
+                "suhu harus berhingga dan memenuhi 0 < minimum_temperature < initial_temperature"
+            )
         cooling_rate = self.cooling_rate
         if cooling_rate is None:
             cooling_rate = (minimum_temperature / initial_temperature) ** (1 / self.max_iterations)
