@@ -22,7 +22,7 @@ function formatValue(value: unknown): string {
     return "otomatis";
   }
   if (typeof value === "number") {
-    return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+    return Number.isInteger(value) ? String(value) : String(Number(value.toPrecision(6)));
   }
   if (typeof value === "object" && value !== null) {
     return JSON.stringify(value);
