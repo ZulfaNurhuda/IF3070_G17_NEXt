@@ -6,7 +6,6 @@ from typing import NotRequired, TypedDict
 
 from src.algorithms.base import HistoryRecord
 from src.algorithms.registry import REGISTRY
-from src.core.evaluator import is_valid
 from src.core.models import Change, Placement, Problem, Ship, State, Vehicle
 from src.core.objectives import OBJECTIVES, total_shipping_fee
 from src.experiments.runner import ExperimentResult, RunRecord
@@ -47,7 +46,6 @@ class StatePayload(TypedDict):
     outside: list[str]
     value: float
     total_shipping_fee: float
-    valid: bool
 
 
 ChangePayload = TypedDict(
@@ -162,7 +160,6 @@ def state_payload(state: State, problem: Problem) -> StatePayload:
         "outside": outside,
         "value": problem.value(state),
         "total_shipping_fee": total_shipping_fee(state, problem),
-        "valid": is_valid(state, problem),
     }
 
 
