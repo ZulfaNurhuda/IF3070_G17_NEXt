@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from functools import cache
 
@@ -105,3 +105,17 @@ def try_place(
     if is_valid_move(move, occupancy_of(state, problem), problem):
         return state.apply(move)
     return None
+
+
+def place_in_order(problem: Problem, candidates: Iterable[tuple[VehicleId, Placement]]) -> State:
+    placements: dict[VehicleId, Placement | None] = dict.fromkeys(problem.vehicle_by_id)
+    owners: dict[Cell, VehicleId] = {}
+    weight = 0
+    for vehicle_id, placement in candidates:
+        move = (Change(vehicle_id, None, placement),)
+        if is_valid_move(move, Occupancy(owners, weight), problem):
+            vehicle = problem.vehicle_by_id[vehicle_id]
+            weight += vehicle.weight
+            owners.update(dict.fromkeys(cells_of(vehicle, placement), vehicle_id))
+            placements[vehicle_id] = placement
+    return State(placements)
