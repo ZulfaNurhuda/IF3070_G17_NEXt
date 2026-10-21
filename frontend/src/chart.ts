@@ -1,4 +1,5 @@
-import { byId, svgElement } from "./dom";
+import { byId, svgElement, textElement } from "./dom";
+import { metricKeys, metricView, unitLabel } from "./metrics";
 import type { HistoryEntry, RunPayload } from "./types";
 
 type Point = [number, number];
@@ -21,12 +22,9 @@ function niceTop(maximum: number): number {
   return Math.ceil(maximum / magnitude) * magnitude;
 }
 
-function seriesPoints(
-  history: HistoryEntry[],
-  pick: (entry: HistoryEntry) => number | undefined,
-): Point[] {
+function seriesPoints(history: HistoryEntry[], key: string): Point[] {
   return history.flatMap((entry): Point[] => {
-    const value = pick(entry);
+    const value = entry[key];
     return value === undefined ? [] : [[entry.iteration, value]];
   });
 }
@@ -89,19 +87,32 @@ function drawChart(
   };
 }
 
-export function renderHistoryChart(run: RunPayload, population: boolean): MoveMarker {
+function metricBlock(title: string, svg: SVGSVGElement): HTMLDivElement {
+  const block = document.createElement("div");
+  block.className = "charts-secondary";
+  const heading = textElement("div", title);
+  heading.className = "muted";
+  block.append(heading, svg);
+  return block;
+}
+
+export function renderHistoryChart(run: RunPayload): MoveMarker {
+  const keys = metricKeys(run.history);
+  const overlays = keys.filter((key) => metricView(key).placement === "overlay");
+  const separate = keys.filter((key) => metricView(key).placement === "separate");
   const lines: ChartLine[] = [
-    { points: seriesPoints(run.history, (entry) => entry.value), className: "series series-main" },
+    { points: seriesPoints(run.history, "value"), className: "series series-main" },
+    ...overlays.map((key) => ({
+      points: seriesPoints(run.history, key),
+      className: metricView(key).className,
+    })),
   ];
-  if (population) {
-    lines.push({
-      points: seriesPoints(run.history, (entry) => entry.average_value),
-      className: "series series-secondary",
-    });
-  }
-  byId("chart-title").textContent = population
-    ? "Nilai objective maksimum (garis) dan rata-rata (putus-putus) populasi"
-    : "Nilai objective terhadap iterasi";
+  const unit = unitLabel(run.unit).toLowerCase();
+  const overlayLabels = overlays.map((key) => metricView(key).label).join(", ");
+  byId("chart-title").textContent =
+    overlays.length > 0
+      ? `Nilai objective terhadap ${unit} dan ${overlayLabels} (putus-putus)`
+      : `Nilai objective terhadap ${unit}`;
   const lastIteration = Math.max(1, run.iterations);
   const markers = [
     drawChart(
@@ -112,19 +123,17 @@ export function renderHistoryChart(run: RunPayload, population: boolean): MoveMa
       160,
     ),
   ];
-  const probabilities = seriesPoints(run.history, (entry) => entry.acceptance_probability);
-  byId("probability-section").hidden = probabilities.length === 0;
-  if (probabilities.length > 0) {
-    markers.push(
-      drawChart(
-        byId<SVGSVGElement>("probability-chart"),
-        [{ points: probabilities, className: "series series-probability" }],
-        lastIteration,
-        1,
-        110,
-      ),
-    );
-  }
+  byId("metric-charts").replaceChildren(
+    ...separate.map((key) => {
+      const view = metricView(key);
+      const lines = [{ points: seriesPoints(run.history, key), className: view.className }];
+      const svg = svgElement("svg", { role: "img", "aria-label": view.title }) as SVGSVGElement;
+      markers.push(
+        drawChart(svg, lines, lastIteration, view.top ?? niceTop(largestValue(lines)), 110),
+      );
+      return metricBlock(view.title, svg);
+    }),
+  );
   return (iteration) => {
     for (const moveMarker of markers) {
       moveMarker(iteration);

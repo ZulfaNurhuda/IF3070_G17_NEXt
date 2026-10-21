@@ -1,4 +1,5 @@
 import { byId, textElement } from "./dom";
+import { metricKeys, metricView, unitLabel } from "./metrics";
 import type { TimelineEntry } from "./timeline";
 import type {
   ChangePayload,
@@ -53,21 +54,16 @@ function describeStep(entry: TimelineEntry, index: number): string {
 }
 
 function describeNote(record: HistoryEntry | undefined): string {
-  if (record?.acceptance_probability !== undefined) {
-    return `Peluang penerimaan: ${formatValue(record.acceptance_probability)}`;
+  if (record === undefined) {
+    return "";
   }
-  if (record?.average_value !== undefined) {
-    return `Maksimum ${formatValue(record.value)}, rata-rata ${formatValue(record.average_value)}`;
-  }
-  return "";
+  return metricKeys([record])
+    .map((key) => `${metricView(key).label}: ${formatValue(record[key])}`)
+    .join(", ");
 }
 
-export function renderRunDetails(
-  experiment: ExperimentPayload,
-  run: RunPayload,
-  population: boolean,
-): void {
-  byId("unit-label").textContent = population ? "Generasi" : "Iterasi";
+export function renderRunDetails(experiment: ExperimentPayload, run: RunPayload): void {
+  byId("unit-label").textContent = unitLabel(run.unit);
   const details: [string, unknown][] = [
     ["algorithm", experiment.algorithm],
     ["objective", experiment.objective],

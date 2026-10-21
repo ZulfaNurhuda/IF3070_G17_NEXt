@@ -46,8 +46,7 @@ export interface ChangePayload {
 export interface HistoryEntry {
   iteration: number;
   value: number;
-  acceptance_probability?: number;
-  average_value?: number;
+  [metric: string]: number;
 }
 
 export interface StepPayload {
@@ -60,6 +59,7 @@ export interface RunPayload {
   seed: number;
   duration_seconds: number;
   iterations: number;
+  unit?: string;
   initial_state: StatePayload;
   final_state: StatePayload;
   history: HistoryEntry[];

@@ -42,9 +42,8 @@ async function main(): Promise<void> {
     }
     const nextTimeline = buildStateTimeline(run);
     const nextRecords = new Map(run.history.map((record) => [record.iteration, record]));
-    const population = run.history.some((record) => record.average_value !== undefined);
-    const nextMarker = renderHistoryChart(run, population);
-    renderRunDetails(source, run, population);
+    const nextMarker = renderHistoryChart(run);
+    renderRunDetails(source, run);
     experiment = source;
     timeline = nextTimeline;
     records = nextRecords;
