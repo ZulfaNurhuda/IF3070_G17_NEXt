@@ -77,6 +77,7 @@ class GeneticAlgorithm:
                 range(len(population)), key=lambda index: fitness[index], reverse=True
             )[: self.elitism_count]
             next_population = [population[index] for index in elite_indices]
+            next_fitness = [fitness[index] for index in elite_indices]
 
             while len(next_population) < self.population_size:
                 first_parent = select_parent(population, fitness, rng)
@@ -85,10 +86,10 @@ class GeneticAlgorithm:
                 if rng.random() < self.mutation_rate:
                     child = mutate(child, problem, rng)
                 next_population.append(child)
+                next_fitness.append(problem.value(child))
 
-            population = next_population
-            fitness = [problem.value(state) for state in population]
-            evaluations += len(population)
+            evaluations += len(next_population) - len(elite_indices)
+            population, fitness = next_population, next_fitness
             best_index = max(range(len(population)), key=lambda index: fitness[index])
             current_best = population[best_index]
             maximum_value = fitness[best_index]
