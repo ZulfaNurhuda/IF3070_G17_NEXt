@@ -46,7 +46,6 @@ class GeneticAlgorithm:
     generations: int = 100
     mutation_rate: float = 0.3
     elitism_count: int = 2
-    fill_after_crossover: bool = False
 
     def run(self, problem: Problem, rng: random.Random) -> SearchResult:
         if self.population_size <= 0:
