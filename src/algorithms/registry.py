@@ -21,8 +21,11 @@ def create_algorithm(name: str, parameters: Mapping[str, object]) -> Algorithm:
     #   Input: name (kunci REGISTRY), parameters (nilai sudah bertipe benar).
     #   Output: instance Algorithm yang siap dijalankan.
     #   Langkah: bila name tidak ada di REGISTRY, raise ValueError berisi daftar nama valid.
-    #   Untuk "random-restart", parameter "inner" berupa nama algoritma; buat algoritma
-    #   dalamnya lewat REGISTRY lalu teruskan sebagai argumen `inner`. Parameter yang
-    #   tidak diisi memakai default dataclass; simulated-annealing menghitung sendiri suhu
-    #   yang bernilai None di awal run, jadi tidak ada langkah khusus untuknya.
+    #   Parameter yang tidak diisi memakai default dataclass (random-restart sudah
+    #   default ke steepest-ascent; simulated-annealing menghitung sendiri suhu yang
+    #   bernilai None di awal run). Aturan algoritma bersarang berlaku umum, bukan khusus
+    #   random-restart: nilai parameter yang berupa nama algoritma (string kunci REGISTRY)
+    #   atau mapping {"algorithm": <nama>, ...parameter lain} dibuat lewat panggilan
+    #   create_algorithm rekursif, sehingga bentuk "params" yang ditulis ke JSON hasil
+    #   eksperimen bisa dipakai ulang apa adanya. Nama di dalamnya juga harus divalidasi.
     raise NotImplementedError
