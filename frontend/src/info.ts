@@ -1,6 +1,12 @@
 import { byId, textElement } from "./dom";
 import type { TimelineEntry } from "./timeline";
-import type { ChangePayload, ExperimentPayload, HistoryEntry, RunPayload } from "./types";
+import type {
+  ChangePayload,
+  ExperimentPayload,
+  HistoryEntry,
+  RunPayload,
+  VehiclePayload,
+} from "./types";
 
 function describeChange(change: ChangePayload): string {
   const { from, to } = change;
@@ -28,6 +34,10 @@ function formatValue(value: unknown): string {
     return JSON.stringify(value);
   }
   return String(value);
+}
+
+function sumOf(vehicles: VehiclePayload[], key: "weight" | "shipping_fee"): number {
+  return vehicles.reduce((sum, vehicle) => sum + vehicle[key], 0);
 }
 
 function describeStep(entry: TimelineEntry, index: number): string {
@@ -85,16 +95,15 @@ export function renderStep(
   lastIndex: number,
 ): void {
   const vehicles = experiment.problem.vehicles;
-  const weight = vehicles.reduce(
-    (sum, vehicle) => sum + (entry.placements.has(vehicle.id) ? vehicle.weight : 0),
-    0,
-  );
+  const carried = vehicles.filter((vehicle) => entry.placements.has(vehicle.id));
   const outside = vehicles
     .filter((vehicle) => !entry.placements.has(vehicle.id))
     .map((vehicle) => vehicle.id);
   byId("iteration").textContent = String(entry.iteration);
   byId("value").textContent = record === undefined ? "-" : formatValue(record.value);
-  byId("weight").textContent = `Berat ${weight} dari ${experiment.problem.ship.max_capacity}`;
+  byId("weight").textContent =
+    `Berat ${sumOf(carried, "weight")} dari ${experiment.problem.ship.max_capacity}`;
+  byId("fee").textContent = `Total fee ${sumOf(carried, "shipping_fee")}`;
   byId("change").textContent = describeStep(entry, index);
   byId("note").textContent = describeNote(record);
   byId("outside").textContent = outside.length > 0 ? outside.join(", ") : "Semua terangkut";
