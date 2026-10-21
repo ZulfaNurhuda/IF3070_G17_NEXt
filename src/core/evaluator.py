@@ -2,7 +2,6 @@ from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from functools import cache
 from itertools import product
-from typing import Final
 
 from src.core.models import (
     Change,
@@ -23,9 +22,6 @@ type Cell = tuple[int, int]
 class Occupancy:
     owners: Mapping[Cell, VehicleId]
     weight: int
-
-
-EMPTY_OCCUPANCY: Final = Occupancy({}, 0)
 
 
 def footprint(vehicle: Vehicle, orientation: Orientation) -> tuple[int, int]:
@@ -100,14 +96,6 @@ def is_valid_move(move: Move, occupancy: Occupancy, problem: Problem) -> bool:
                 return False
             taken.add(cell)
     return True
-
-
-def is_valid(state: State, problem: Problem) -> bool:
-    placing = tuple(
-        Change(vehicle.id, None, state.placements[vehicle.id])
-        for vehicle in loaded_vehicles(state, problem)
-    )
-    return is_valid_move(placing, EMPTY_OCCUPANCY, problem)
 
 
 def place_in_order(problem: Problem, candidates: Iterable[tuple[VehicleId, Placement]]) -> State:
