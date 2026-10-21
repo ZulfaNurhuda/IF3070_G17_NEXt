@@ -51,6 +51,11 @@ def mutate(state: State, problem: Problem, rng: random.Random) -> State:
     return state if successor is None else successor[1]
 
 
+def elite_indices(fitness: Sequence[float], count: int) -> list[int]:
+    ranked = sorted(range(len(fitness)), key=lambda index: fitness[index], reverse=True)
+    return ranked[:count]
+
+
 @dataclass(frozen=True, slots=True)
 class GeneticAlgorithm:
     population_size: int = 50
@@ -58,7 +63,7 @@ class GeneticAlgorithm:
     mutation_rate: float = 0.3
     elitism_count: int = 2
 
-    def run(self, problem: Problem, rng: random.Random) -> SearchResult:
+    def __post_init__(self) -> None:
         if self.population_size <= 0:
             raise ValueError("population_size harus positif")
         if self.generations < 0:
@@ -68,6 +73,28 @@ class GeneticAlgorithm:
         if not 0 <= self.elitism_count <= self.population_size:
             raise ValueError("elitism_count harus berada di antara 0 dan population_size")
 
+    def next_generation(
+        self,
+        population: Sequence[State],
+        fitness: Sequence[float],
+        problem: Problem,
+        rng: random.Random,
+    ) -> tuple[list[State], list[float]]:
+        elites = elite_indices(fitness, self.elitism_count)
+        next_population = [population[index] for index in elites]
+        next_fitness = [fitness[index] for index in elites]
+        cumulative_weights = roulette_weights(fitness)
+        while len(next_population) < self.population_size:
+            first_parent = select_parent(population, cumulative_weights, rng)
+            second_parent = select_parent(population, cumulative_weights, rng)
+            child = crossover(first_parent, second_parent, problem, rng)
+            if rng.random() < self.mutation_rate:
+                child = mutate(child, problem, rng)
+            next_population.append(child)
+            next_fitness.append(problem.value(child))
+        return next_population, next_fitness
+
+    def run(self, problem: Problem, rng: random.Random) -> SearchResult:
         population = [random_state(problem, rng) for _ in range(self.population_size)]
         fitness = [problem.value(state) for state in population]
         evaluations = len(population)
@@ -77,24 +104,8 @@ class GeneticAlgorithm:
         steps: list[Step] = []
 
         for generation in range(1, self.generations + 1):
-            elite_indices = sorted(
-                range(len(population)), key=lambda index: fitness[index], reverse=True
-            )[: self.elitism_count]
-            next_population = [population[index] for index in elite_indices]
-            next_fitness = [fitness[index] for index in elite_indices]
-
-            cumulative_weights = roulette_weights(fitness)
-            while len(next_population) < self.population_size:
-                first_parent = select_parent(population, cumulative_weights, rng)
-                second_parent = select_parent(population, cumulative_weights, rng)
-                child = crossover(first_parent, second_parent, problem, rng)
-                if rng.random() < self.mutation_rate:
-                    child = mutate(child, problem, rng)
-                next_population.append(child)
-                next_fitness.append(problem.value(child))
-
-            evaluations += len(next_population) - len(elite_indices)
-            population, fitness = next_population, next_fitness
+            population, fitness = self.next_generation(population, fitness, problem, rng)
+            evaluations += self.population_size - self.elitism_count
             current_best = population[best_index(fitness)]
             history.append(generation_record(generation, fitness))
             steps.append(Step(generation, previous_best.diff(current_best)))
