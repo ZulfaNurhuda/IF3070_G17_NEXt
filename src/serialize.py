@@ -2,7 +2,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from src.algorithms.base import HistoryRecord
 from src.algorithms.registry import REGISTRY
@@ -54,11 +54,7 @@ ChangePayload = TypedDict(
 )
 
 
-class HistoryEntry(TypedDict):
-    iteration: int
-    value: float
-    acceptance_probability: NotRequired[float]
-    average_value: NotRequired[float]
+type HistoryEntry = dict[str, float]
 
 
 class StepPayload(TypedDict):
@@ -71,6 +67,7 @@ class RunPayload(TypedDict):
     seed: int
     duration_seconds: float
     iterations: int
+    unit: str
     initial_state: StatePayload
     final_state: StatePayload
     history: list[HistoryEntry]
@@ -172,12 +169,7 @@ def change_payload(change: Change) -> ChangePayload:
 
 
 def history_entry(record: HistoryRecord) -> HistoryEntry:
-    entry: HistoryEntry = {"iteration": record.iteration, "value": record.value}
-    if record.acceptance_probability is not None:
-        entry["acceptance_probability"] = record.acceptance_probability
-    if record.average_value is not None:
-        entry["average_value"] = record.average_value
-    return entry
+    return {"iteration": record.iteration, "value": record.value, **record.metrics}
 
 
 def run_payload(record: RunRecord, problem: Problem) -> RunPayload:
@@ -187,6 +179,7 @@ def run_payload(record: RunRecord, problem: Problem) -> RunPayload:
         "seed": record.seed,
         "duration_seconds": record.duration_seconds,
         "iterations": result.iterations,
+        "unit": result.unit,
         "initial_state": state_payload(result.initial_state, problem),
         "final_state": state_payload(result.final_state, problem),
         "history": [history_entry(entry) for entry in result.history],
