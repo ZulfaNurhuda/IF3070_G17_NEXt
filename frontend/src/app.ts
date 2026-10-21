@@ -50,14 +50,20 @@ async function main(): Promise<void> {
       return;
     }
     const request = ++latestRequest;
-    const loaded = await loadExperiment(entry);
-    if (request !== latestRequest) {
-      return;
+    try {
+      const loaded = await loadExperiment(entry);
+      if (request !== latestRequest) {
+        return;
+      }
+      showRun(loaded, 0);
+      runSelect.replaceChildren(
+        ...loaded.runs.map((item) => option(`Run ${item.run} (seed ${item.seed})`)),
+      );
+    } catch (error) {
+      if (request === latestRequest) {
+        showMessage(error);
+      }
     }
-    showRun(loaded, 0);
-    runSelect.replaceChildren(
-      ...loaded.runs.map((item) => option(`Run ${item.run} (seed ${item.seed})`)),
-    );
   }
 
   function move(step: number): void {
@@ -65,7 +71,7 @@ async function main(): Promise<void> {
     render();
   }
 
-  fileSelect.addEventListener("change", () => selectFile().catch(showMessage));
+  fileSelect.addEventListener("change", () => void selectFile());
   runSelect.addEventListener("change", () => {
     try {
       if (experiment !== undefined) {
