@@ -1,7 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import index from "./index.html";
-import type { FileEntry } from "./src/types";
+import type { FileEntry } from "./src/data/types";
 
 const OUTPUT_DIRECTORY = join(import.meta.dir, "..", "output");
 const PORT = Number(Bun.env.PORT ?? 3000);

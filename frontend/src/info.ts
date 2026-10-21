@@ -1,13 +1,13 @@
-import { byId, textElement } from "./dom";
-import { metricKeys, metricView, unitLabel } from "./metrics";
-import type { TimelineEntry } from "./timeline";
+import type { TimelineEntry } from "./data/timeline";
 import type {
   ChangePayload,
   ExperimentPayload,
   HistoryEntry,
   RunPayload,
   VehiclePayload,
-} from "./types";
+} from "./data/types";
+import { byId, textElement } from "./dom";
+import { metricKeys, metricView, unitLabel } from "./metrics";
 
 function describeChange(change: ChangePayload): string {
   const { from, to } = change;

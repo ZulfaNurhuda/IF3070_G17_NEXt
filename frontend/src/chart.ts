@@ -1,6 +1,6 @@
+import type { HistoryEntry, RunPayload } from "./data/types";
 import { byId, svgElement, textElement } from "./dom";
 import { metricKeys, metricView, unitLabel } from "./metrics";
-import type { HistoryEntry, RunPayload } from "./types";
 
 type Point = [number, number];
 
