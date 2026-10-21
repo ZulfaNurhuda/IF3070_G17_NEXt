@@ -259,10 +259,10 @@ def experiment_payload(experiment: ExperimentResult) -> ExperimentPayload:
     }
 
 
-def write_experiment(experiment: ExperimentResult, directory: Path) -> Path:
+def write_experiment(experiment: ExperimentResult, directory: Path, name: str) -> Path:
     ship = experiment.problem.ship
     vehicle_count = len(experiment.problem.vehicles)
-    prefix = f"{experiment.algorithm_name}_ship{ship.width}x{ship.length}-vehicles{vehicle_count}"
+    prefix = f"{name}_ship{ship.width}x{ship.length}-vehicles{vehicle_count}"
     content = json.dumps(experiment_payload(experiment), indent=2, ensure_ascii=False) + "\n"
     directory.mkdir(parents=True, exist_ok=True)
     timestamp = int(experiment.created_at.timestamp())
