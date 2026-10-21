@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Final
 
 type VehicleId = str
 
@@ -10,6 +11,9 @@ type VehicleId = str
 class Orientation(StrEnum):
     HORIZONTAL = "Horizontal"
     VERTICAL = "Vertical"
+
+
+ORIENTATIONS: Final = tuple(Orientation)
 
 
 @dataclass(frozen=True, slots=True)

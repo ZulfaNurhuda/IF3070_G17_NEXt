@@ -4,7 +4,16 @@ from itertools import chain, combinations
 from typing import Final
 
 from src.core.evaluator import footprint, is_valid_move, occupancy_of
-from src.core.models import Change, Move, Orientation, Placement, Problem, State, Vehicle
+from src.core.models import (
+    ORIENTATIONS,
+    Change,
+    Move,
+    Orientation,
+    Placement,
+    Problem,
+    State,
+    Vehicle,
+)
 
 MAX_RANDOM_SUCCESSOR_ATTEMPTS: Final = 100
 
@@ -45,7 +54,7 @@ def relocation_candidates(state: State, problem: Problem) -> Iterator[Move]:
     for vehicle in problem.vehicles:
         current = state.placements[vehicle.id]
         if current is None:
-            orientations = tuple(Orientation)
+            orientations = ORIENTATIONS
         else:
             orientations = (current.orientation,)
             yield (Change(vehicle.id, current, None),)
@@ -87,7 +96,7 @@ def sample_relocation(state: State, problem: Problem, rng: random.Random) -> Mov
     vehicle = rng.choice(problem.vehicles)
     current = state.placements[vehicle.id]
     if current is None:
-        orientation = rng.choice(tuple(Orientation))
+        orientation = rng.choice(ORIENTATIONS)
     else:
         orientation = current.orientation
         if rng.randrange(ship.width * ship.length + 1) == 0:

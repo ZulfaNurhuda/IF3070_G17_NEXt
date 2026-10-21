@@ -1,12 +1,12 @@
 import random
 
 from src.core.evaluator import place_in_order
-from src.core.models import Orientation, Placement, Problem, Ship, State
+from src.core.models import ORIENTATIONS, Placement, Problem, Ship, State
 
 
 def random_placement(ship: Ship, rng: random.Random) -> Placement:
     return Placement(
-        rng.randrange(ship.width), rng.randrange(ship.length), rng.choice(tuple(Orientation))
+        rng.randrange(ship.width), rng.randrange(ship.length), rng.choice(ORIENTATIONS)
     )
 
 
