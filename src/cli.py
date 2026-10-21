@@ -16,9 +16,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     #   --seed (default DEFAULT_SEED),
     #   --out {scratch,final} (default DEFAULT_OUTPUT). Alur: load_problem, ubah --param ke
     #   tipe field dataclass algoritma terkait (batas luar sistem: validasi dan raise error
-    #   yang jelas), create_algorithm, execute_runs, write_experiment ke output/<out>/.
+    #   yang jelas), create_algorithm, execute_runs, write_experiment ke output/<out>/
+    #   dengan nama algoritma sebagai awalan nama file.
     #   Subcommand `run-all`: --instance, --objective, --seed; menjalankan
-    #   orchestrate_official_experiments dan menulis semuanya ke output/final.
+    #   orchestrate_official_experiments dan menulis semuanya ke output/final, memasangkan
+    #   tiap hasil dengan configs.OFFICIAL_EXPERIMENTS berurutan dan memakai config.name
+    #   sebagai awalan nama file agar enam variasi genetic-algorithm bisa dibedakan.
     #   Output: exit code 0 bila sukses, tidak nol bila argumen tidak valid.
     raise NotImplementedError
 
