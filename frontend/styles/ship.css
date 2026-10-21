@@ -7,6 +7,54 @@
   stroke: var(--grid);
 }
 
+.hue-0 {
+  --hue: 0;
+}
+
+.hue-1 {
+  --hue: 150;
+}
+
+.hue-2 {
+  --hue: 300;
+}
+
+.hue-3 {
+  --hue: 90;
+}
+
+.hue-4 {
+  --hue: 240;
+}
+
+.hue-5 {
+  --hue: 30;
+}
+
+.hue-6 {
+  --hue: 180;
+}
+
+.hue-7 {
+  --hue: 330;
+}
+
+.hue-8 {
+  --hue: 120;
+}
+
+.hue-9 {
+  --hue: 270;
+}
+
+.hue-10 {
+  --hue: 60;
+}
+
+.hue-11 {
+  --hue: 210;
+}
+
 .vehicle-body {
   fill: hsl(var(--hue) 70% 85%);
   stroke: hsl(var(--hue) 50% 30%);

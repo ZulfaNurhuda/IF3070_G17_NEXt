@@ -3,6 +3,7 @@ import type { TimelineEntry } from "./timeline";
 import type { Orientation, ProblemPayload, VehiclePayload } from "./types";
 
 const CELL = 32;
+const HUE_CLASSES = 12;
 
 function footprint(
   vehicle: VehiclePayload,
@@ -42,8 +43,8 @@ function vehicleShape(
   const { across, down } = footprint(vehicle, orientation);
   const left = 1 + x * CELL;
   const top = 1 + y * CELL;
-  const group = svgElement("g", { class: changed ? "vehicle changed" : "vehicle" });
-  group.style.setProperty("--hue", String((index * 47) % 360));
+  const hue = `hue-${index % HUE_CLASSES}`;
+  const group = svgElement("g", { class: changed ? `vehicle ${hue} changed` : `vehicle ${hue}` });
   group.append(
     svgElement("rect", {
       class: "vehicle-body",
