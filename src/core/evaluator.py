@@ -98,15 +98,6 @@ def is_valid(state: State, problem: Problem) -> bool:
     return is_valid_move(placing, EMPTY_OCCUPANCY, problem)
 
 
-def try_place(
-    state: State, problem: Problem, vehicle_id: VehicleId, placement: Placement
-) -> State | None:
-    move = (Change(vehicle_id, state.placements[vehicle_id], placement),)
-    if is_valid_move(move, occupancy_of(state, problem), problem):
-        return state.apply(move)
-    return None
-
-
 def place_in_order(problem: Problem, candidates: Iterable[tuple[VehicleId, Placement]]) -> State:
     placements: dict[VehicleId, Placement | None] = dict.fromkeys(problem.vehicle_by_id)
     owners: dict[Cell, VehicleId] = {}
