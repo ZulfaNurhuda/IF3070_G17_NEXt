@@ -6,18 +6,22 @@ from itertools import pairwise
 from src.algorithms.base import Algorithm, HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
 from src.core.models import Move, Problem, State
-from src.core.neighbors import enumerate_neighbors
+from src.core.neighbors import successors
 
 type Candidate = tuple[Move, State, float]
 type Choice = Callable[[float, list[Candidate], random.Random], Candidate | None]
 
 
-def scored_neighbors(state: State, problem: Problem) -> list[Candidate]:
-    candidates: list[Candidate] = []
-    for move in enumerate_neighbors(state, problem):
-        neighbor = state.apply(move)
-        candidates.append((move, neighbor, problem.value(neighbor)))
-    return candidates
+def scored_successors(state: State, problem: Problem) -> list[Candidate]:
+    return [
+        (move, successor, problem.value(successor))
+        for move, successor in successors(state, problem)
+    ]
+
+
+def best_candidates(candidates: list[Candidate]) -> tuple[float, list[Candidate]]:
+    best_value = max(candidate[2] for candidate in candidates)
+    return best_value, [candidate for candidate in candidates if candidate[2] == best_value]
 
 
 def choose_steepest(
@@ -25,10 +29,8 @@ def choose_steepest(
 ) -> Candidate | None:
     if not candidates:
         return None
-    best_value = max(candidate[2] for candidate in candidates)
-    if best_value <= current_value:
-        return None
-    return rng.choice([candidate for candidate in candidates if candidate[2] == best_value])
+    best_value, best = best_candidates(candidates)
+    return rng.choice(best) if best_value > current_value else None
 
 
 def choose_stochastic(
@@ -47,7 +49,7 @@ def climb(problem: Problem, rng: random.Random, choose: Choice) -> SearchResult:
     steps: list[Step] = []
     iteration = 0
     while True:
-        candidates = scored_neighbors(current, problem)
+        candidates = scored_successors(current, problem)
         evaluations += len(candidates)
         chosen = choose(current_value, candidates, rng)
         if chosen is None:
@@ -88,7 +90,7 @@ class SidewaysMove:
             nonlocal sideways_streak
             if not candidates:
                 return None
-            best_value = max(candidate[2] for candidate in candidates)
+            best_value, best = best_candidates(candidates)
             if best_value < current_value:
                 return None
             if best_value == current_value:
@@ -97,7 +99,7 @@ class SidewaysMove:
                 sideways_streak += 1
             else:
                 sideways_streak = 0
-            return rng.choice([candidate for candidate in candidates if candidate[2] == best_value])
+            return rng.choice(best)
 
         result = climb(problem, rng, choose)
         values = [record.value for record in result.history]
@@ -128,9 +130,7 @@ class RandomRestart:
             history.extend(
                 replace(record, iteration=record.iteration + offset) for record in result.history
             )
-        best_index = max(
-            range(len(results)), key=lambda index: problem.value(results[index].final_state)
-        )
+        best_index = max(range(len(results)), key=lambda index: results[index].history[-1].value)
         best = results[best_index]
         steps = tuple(
             Step(iteration=step.iteration + offsets[best_index], changes=step.changes)
