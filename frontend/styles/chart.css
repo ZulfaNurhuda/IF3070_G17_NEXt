@@ -41,3 +41,7 @@
   stroke: var(--accent);
   stroke-dasharray: 3 3;
 }
+
+.series-extra {
+  stroke: var(--line-strong);
+}
