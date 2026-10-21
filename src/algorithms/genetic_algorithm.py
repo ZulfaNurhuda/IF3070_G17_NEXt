@@ -6,7 +6,7 @@ from src.algorithms.base import HistoryRecord, SearchResult, Step
 from src.core.evaluator import try_place
 from src.core.initial import random_state
 from src.core.models import Problem, State
-from src.core.neighbors import random_neighbor
+from src.core.neighbors import random_successor
 
 
 def select_parent(
@@ -36,8 +36,8 @@ def crossover(first: State, second: State, problem: Problem, rng: random.Random)
 
 
 def mutate(state: State, problem: Problem, rng: random.Random) -> State:
-    move = random_neighbor(state, problem, rng)
-    return state if move is None else state.apply(move)
+    successor = random_successor(state, problem, rng)
+    return state if successor is None else successor[1]
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,10 +104,9 @@ class GeneticAlgorithm:
             steps.append(Step(generation, previous_best.diff(current_best)))
             previous_best = current_best
 
-        final_best = population[max(range(len(population)), key=lambda index: fitness[index])]
         return SearchResult(
             initial_state=initial_best,
-            final_state=final_best,
+            final_state=previous_best,
             iterations=self.generations,
             evaluations=evaluations,
             history=tuple(history),
