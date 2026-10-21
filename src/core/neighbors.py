@@ -117,8 +117,6 @@ SAMPLERS: Final[tuple[Sampler, ...]] = (sample_rotation, sample_relocation, samp
 
 def random_successor(state: State, problem: Problem, rng: random.Random) -> Successor | None:
     vehicle_count = len(problem.vehicles)
-    if vehicle_count == 0:
-        return None
     positions = problem.ship.width * problem.ship.length
     cumulative_weights = list(
         accumulate(
