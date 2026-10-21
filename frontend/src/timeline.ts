@@ -15,7 +15,10 @@ function samePlacement(left: PlacementPayload | null, right: PlacementPayload | 
 
 export function buildStateTimeline(run: RunPayload): TimelineEntry[] {
   let placements = new Map<string, PlacementPayload>(
-    run.initial_state.placements.map(({ id, x, y, orientation }) => [id, { x, y, orientation }]),
+    run.initial_state.placements.map((placement): [string, PlacementPayload] => [
+      placement.id,
+      placement,
+    ]),
   );
   const timeline: TimelineEntry[] = [{ iteration: 0, changes: [], placements }];
   for (const step of run.steps) {
