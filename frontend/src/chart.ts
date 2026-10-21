@@ -6,6 +6,8 @@ interface ChartLine {
   className: string;
 }
 
+type MoveMarker = (iteration: number) => void;
+
 const WIDTH = 640;
 const MARGIN = { left: 44, right: 12, top: 12, bottom: 24 };
 
@@ -34,10 +36,9 @@ function tickLabel(x: number, y: number, anchor: string, text: string): SVGEleme
 function drawChart(
   svg: SVGSVGElement,
   lines: ChartLine[],
-  marker: number,
   top: number,
   height: number,
-): void {
+): MoveMarker {
   const lastIteration = lines.reduce(
     (largest, line) => line.points.reduce((inner, [x]) => Math.max(inner, x), largest),
     1,
@@ -58,18 +59,18 @@ function drawChart(
     const points = line.points.map(([x, y]) => `${toX(x).toFixed(1)},${toY(y).toFixed(1)}`);
     children.push(svgElement("polyline", { class: line.className, points: points.join(" ") }));
   }
+  const marker = svgElement("line", { class: "marker", y1: MARGIN.top, y2: toY(0) });
   children.push(
-    svgElement("line", {
-      class: "marker",
-      x1: toX(marker),
-      y1: MARGIN.top,
-      x2: toX(marker),
-      y2: toY(0),
-    }),
+    marker,
     tickLabel(MARGIN.left, height - 6, "start", "0"),
     tickLabel(WIDTH - MARGIN.right, height - 6, "end", String(lastIteration)),
   );
   svg.replaceChildren(...children);
+  return (iteration) => {
+    const x = String(toX(iteration));
+    marker.setAttribute("x1", x);
+    marker.setAttribute("x2", x);
+  };
 }
 
 function valueLines(run: RunPayload): { lines: ChartLine[]; isPopulation: boolean } {
@@ -102,13 +103,16 @@ function valueLines(run: RunPayload): { lines: ChartLine[]; isPopulation: boolea
   };
 }
 
-export function renderHistoryChart(run: RunPayload, iteration: number): void {
+export function renderHistoryChart(run: RunPayload): MoveMarker {
   const { lines, isPopulation } = valueLines(run);
-  const largest = Math.max(...lines.flatMap((line) => line.points.map(([, y]) => y)));
+  const largest = lines.reduce(
+    (highest, line) => line.points.reduce((inner, [, y]) => Math.max(inner, y), highest),
+    0,
+  );
   byId("chart-title").textContent = isPopulation
     ? "Nilai maksimum (garis) dan rata-rata (putus-putus) populasi"
     : "Nilai terhadap iterasi";
-  drawChart(byId<SVGSVGElement>("history-chart"), lines, iteration, niceTop(largest), 160);
+  const markers = [drawChart(byId<SVGSVGElement>("history-chart"), lines, niceTop(largest), 160)];
   const probabilities = run.history.flatMap((entry): [number, number][] =>
     entry.acceptance_probability === undefined
       ? []
@@ -116,12 +120,18 @@ export function renderHistoryChart(run: RunPayload, iteration: number): void {
   );
   byId("probability-section").hidden = probabilities.length === 0;
   if (probabilities.length > 0) {
-    drawChart(
-      byId<SVGSVGElement>("probability-chart"),
-      [{ points: probabilities, className: "series series-probability" }],
-      iteration,
-      1,
-      110,
+    markers.push(
+      drawChart(
+        byId<SVGSVGElement>("probability-chart"),
+        [{ points: probabilities, className: "series series-probability" }],
+        1,
+        110,
+      ),
     );
   }
+  return (iteration) => {
+    for (const moveMarker of markers) {
+      moveMarker(iteration);
+    }
+  };
 }

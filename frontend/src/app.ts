@@ -15,6 +15,7 @@ export async function main(): Promise<void> {
   let run: RunPayload | undefined;
   let timeline: TimelineEntry[] = [];
   let index = 0;
+  let moveMarker = (_iteration: number): void => {};
 
   function render(): void {
     const entry = timeline[index];
@@ -23,7 +24,7 @@ export async function main(): Promise<void> {
     }
     renderShip(ship, entry, experiment.problem);
     renderInfo(experiment, run, timeline, index);
-    renderHistoryChart(run, entry.iteration);
+    moveMarker(entry.iteration);
   }
 
   function selectRun(): void {
@@ -32,6 +33,7 @@ export async function main(): Promise<void> {
       return;
     }
     timeline = buildStateTimeline(run);
+    moveMarker = renderHistoryChart(run);
     index = 0;
     render();
   }
