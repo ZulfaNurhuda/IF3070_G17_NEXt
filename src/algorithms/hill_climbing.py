@@ -1,6 +1,7 @@
 import random
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from itertools import pairwise
 
 from src.algorithms.base import Algorithm, HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
@@ -82,12 +83,11 @@ class SidewaysMove:
         if self.max_sideways < 0:
             raise ValueError("max_sideways harus non-negatif")
         sideways_streak = 0
-        sideways_used = 0
 
         def choose(
             current_value: float, candidates: list[Candidate], rng: random.Random
         ) -> Candidate | None:
-            nonlocal sideways_streak, sideways_used
+            nonlocal sideways_streak
             if not candidates:
                 return None
             best_value, best = best_candidates(candidates)
@@ -97,12 +97,13 @@ class SidewaysMove:
                 if sideways_streak >= self.max_sideways:
                     return None
                 sideways_streak += 1
-                sideways_used += 1
             else:
                 sideways_streak = 0
             return rng.choice(best)
 
         result = climb(problem, rng, choose)
+        values = [record.value for record in result.history]
+        sideways_used = sum(1 for before, after in pairwise(values) if before == after)
         return replace(result, extra={"sideways_used": float(sideways_used)})
 
 
