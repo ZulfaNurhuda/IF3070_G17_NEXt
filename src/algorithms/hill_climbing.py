@@ -123,13 +123,12 @@ class RandomRestart:
         results = [self.inner.run(problem, rng) for _ in range(self.max_restart)]
         best_index = max(range(len(results)), key=lambda index: results[index].history[-1].value)
         best = results[best_index]
-        history: list[HistoryRecord] = []
-        steps: list[Step] = []
-        reached = results[0].initial_state
-        for result in results:
-            offset = history[-1].iteration + 1 if history else 0
-            if history:
-                steps.append(Step(iteration=offset, changes=reached.diff(result.initial_state)))
+        history = list(results[0].history)
+        steps = list(results[0].steps)
+        reached = results[0].final_state
+        for result in results[1:]:
+            offset = history[-1].iteration + 1
+            steps.append(Step(iteration=offset, changes=reached.diff(result.initial_state)))
             history.extend(
                 replace(record, iteration=record.iteration + offset) for record in result.history
             )
@@ -139,9 +138,14 @@ class RandomRestart:
             iteration = history[-1].iteration + 1
             steps.append(Step(iteration=iteration, changes=reached.diff(best.final_state)))
             history.append(HistoryRecord(iteration=iteration, value=best.history[-1].value))
-        extra = {"restarts": float(self.max_restart), "best_restart": float(best_index)}
-        for index, result in enumerate(results):
-            extra[f"iterations_restart_{index}"] = float(result.iterations)
+        extra = {
+            "restarts": float(self.max_restart),
+            "best_restart": float(best_index),
+            **{
+                f"iterations_restart_{index}": float(result.iterations)
+                for index, result in enumerate(results)
+            },
+        }
         return SearchResult(
             initial_state=results[0].initial_state,
             final_state=best.final_state,
