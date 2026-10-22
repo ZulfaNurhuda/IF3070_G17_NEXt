@@ -60,11 +60,15 @@ def generation_record(generation: int, fitness: Sequence[float]) -> HistoryRecor
 class GeneticAlgorithm:
     population_size: int = 50
     generations: int = 100
+    # Sumber: laju mutasi per anak dipilih dalam rentang yang lazim, yaitu rata-rata antara satu
+    #   gen per generasi dan satu gen per anak yang dimutasi.
+    #   A. E. Eiben and J. E. Smith, Introduction to Evolutionary Computing, 2nd ed.
+    #   Berlin, Germany: Springer, 2015, sec. 4.2.1, p. 52.
     mutation_rate: float = 0.3
     # Sumber: elitisme (menyalin individu terbaik langsung ke generasi berikutnya) diadaptasi dari
-    #   skema survivor selection pada algoritma evolusioner.
+    #   skema fitness-based replacement pada survivor selection.
     #   A. E. Eiben and J. E. Smith, Introduction to Evolutionary Computing, 2nd ed.
-    #   Berlin, Germany: Springer, 2015.
+    #   Berlin, Germany: Springer, 2015, sec. 5.3.2, p. 89.
     elitism_count: int = 2
 
     def __post_init__(self) -> None:
