@@ -14,6 +14,7 @@ from src.storage.specification import ATTRIBUTE_KEYS, IntegerRange, VehicleSpeci
 
 VEHICLE_ID_PREFIX: Final = "Car"
 DEFAULT_CAPACITY_RATIO: Final = 0.6
+DEFAULT_VEHICLE_COUNT: Final = 25
 DEFAULT_RANGES: Final[Mapping[str, IntegerRange]] = {
     "width": IntegerRange(1, 4),
     "length": IntegerRange(2, 6),
@@ -26,46 +27,63 @@ SAFE_NAME: Final = re.compile(r"[A-Za-z0-9_-]+")
 
 @dataclass(frozen=True, slots=True)
 class GenerationRequest:
-    ship_width: int
-    ship_length: int
-    capacity: int | None
+    ship_width: IntegerRange
+    ship_length: IntegerRange
+    capacity: IntegerRange | None
     capacity_ratio: float
-    random_count: int
+    vehicle_count: IntegerRange | None
     ranges: Mapping[str, IntegerRange]
     specifications: Sequence[VehicleSpecification]
 
 
-def validate_request(request: GenerationRequest) -> None:
-    if request.ship_width <= 0 or request.ship_length <= 0:
-        raise ValueError("--ship-width dan --ship-length harus bilangan bulat positif")
-    if request.capacity is not None and request.capacity <= 0:
-        raise ValueError("--capacity harus bilangan bulat positif")
-    if request.capacity_ratio <= 0:
-        raise ValueError("--capacity-ratio harus lebih besar dari 0")
-    if request.random_count < 0:
-        raise ValueError("--vehicles tidak boleh negatif")
-    if request.random_count == 0 and not request.specifications:
-        raise ValueError("instance harus memiliki minimal satu kendaraan")
+def effective_ranges(
+    request: GenerationRequest, specification: VehicleSpecification
+) -> Mapping[str, IntegerRange]:
+    return {**request.ranges, **specification.ranges}
+
+
+def can_have_random_vehicles(request: GenerationRequest) -> bool:
+    if request.vehicle_count is None:
+        return not request.specifications
+    return request.vehicle_count.high > len(request.specifications)
 
 
 def validate_ranges(
     ranges: Mapping[str, IntegerRange], request: GenerationRequest, owner: str
 ) -> None:
     width, length = ranges["width"].high, ranges["length"].high
-    ship_width, ship_length = request.ship_width, request.ship_length
+    ship_width, ship_length = request.ship_width.low, request.ship_length.low
     fits = (width <= ship_width and length <= ship_length) or (
         length <= ship_width and width <= ship_length
     )
     if not fits:
         raise ValueError(
             f"{owner}: kendaraan terbesar {width}x{length} tidak muat di geladak "
-            f"{ship_width}x{ship_length}"
+            f"terkecil {ship_width}x{ship_length}"
         )
     heaviest = ranges["weight"].high
-    if request.capacity is not None and heaviest > request.capacity:
+    if request.capacity is not None and heaviest > request.capacity.low:
         raise ValueError(
-            f"{owner}: berat maksimum {heaviest} melebihi kapasitas {request.capacity}"
+            f"{owner}: berat maksimum {heaviest} melebihi kapasitas terkecil {request.capacity.low}"
         )
+
+
+def validate_request(request: GenerationRequest) -> None:
+    if request.capacity_ratio <= 0:
+        raise ValueError("--capacity-ratio harus lebih besar dari 0")
+    explicit = [spec.number for spec in request.specifications if spec.number is not None]
+    if len(set(explicit)) != len(explicit):
+        raise ValueError("id pada --vehicle tidak boleh kembar")
+    specified = len(request.specifications)
+    if request.vehicle_count is not None and request.vehicle_count.low < specified:
+        raise ValueError(
+            f"--vehicles: batas bawah {request.vehicle_count.low} lebih kecil dari "
+            f"jumlah --vehicle ({specified})"
+        )
+    for index, spec in enumerate(request.specifications, start=1):
+        validate_ranges(effective_ranges(request, spec), request, f"--vehicle ke-{index}")
+    if can_have_random_vehicles(request):
+        validate_ranges(request.ranges, request, "kendaraan acak (--vehicle-*)")
 
 
 def free_numbers(taken: set[int]) -> Iterator[int]:
@@ -77,38 +95,48 @@ def draw_vehicle(number: int, ranges: Mapping[str, IntegerRange], rng: random.Ra
     return Vehicle(f"{VEHICLE_ID_PREFIX}{number:02d}", **values)
 
 
-def generate_vehicles(request: GenerationRequest, rng: random.Random) -> list[Vehicle]:
-    explicit = [spec.number for spec in request.specifications if spec.number is not None]
-    if len(set(explicit)) != len(explicit):
-        raise ValueError("id pada --vehicle tidak boleh kembar")
-    available = free_numbers(set(explicit))
-    plan: list[tuple[int, Mapping[str, IntegerRange]]] = []
-    for index, spec in enumerate(request.specifications, start=1):
-        ranges = {**request.ranges, **spec.ranges}
-        validate_ranges(ranges, request, f"--vehicle ke-{index}")
-        plan.append((spec.number if spec.number is not None else next(available), ranges))
-    if request.random_count > 0:
-        validate_ranges(request.ranges, request, "kendaraan acak (--vehicle-*)")
-        plan.extend((next(available), request.ranges) for _ in range(request.random_count))
+def draw_vehicle_count(request: GenerationRequest, rng: random.Random) -> int:
+    if request.vehicle_count is not None:
+        return request.vehicle_count.draw(rng)
+    return len(request.specifications) or DEFAULT_VEHICLE_COUNT
+
+
+def generate_vehicles(
+    request: GenerationRequest, random_count: int, rng: random.Random
+) -> list[Vehicle]:
+    explicit = {spec.number for spec in request.specifications if spec.number is not None}
+    available = free_numbers(explicit)
+    plan: list[tuple[int, Mapping[str, IntegerRange]]] = [
+        (
+            spec.number if spec.number is not None else next(available),
+            effective_ranges(request, spec),
+        )
+        for spec in request.specifications
+    ]
+    plan.extend((next(available), request.ranges) for _ in range(random_count))
     drawn = [(number, draw_vehicle(number, ranges, rng)) for number, ranges in plan]
     return [vehicle for _, vehicle in sorted(drawn, key=lambda entry: entry[0])]
 
 
-def resolve_capacity(request: GenerationRequest, vehicles: Sequence[Vehicle]) -> int:
-    if request.capacity is not None:
-        return request.capacity
+def resolve_capacity(capacity: int | None, ratio: float, vehicles: Sequence[Vehicle]) -> int:
+    if capacity is not None:
+        return capacity
     total_weight = sum(vehicle.weight for vehicle in vehicles)
-    return max(1, round(total_weight * request.capacity_ratio))
+    return max(1, round(total_weight * ratio))
 
 
 def generate_problem(request: GenerationRequest, rng: random.Random) -> ProblemPayload:
     validate_request(request)
-    vehicles = generate_vehicles(request, rng)
+    ship_width = request.ship_width.draw(rng)
+    ship_length = request.ship_length.draw(rng)
+    count = draw_vehicle_count(request, rng)
+    capacity = None if request.capacity is None else request.capacity.draw(rng)
+    vehicles = generate_vehicles(request, count - len(request.specifications), rng)
     return {
         "ship": {
-            "width": request.ship_width,
-            "length": request.ship_length,
-            "max_capacity": resolve_capacity(request, vehicles),
+            "width": ship_width,
+            "length": ship_length,
+            "max_capacity": resolve_capacity(capacity, request.capacity_ratio, vehicles),
         },
         "vehicles": [vehicle_payload(vehicle) for vehicle in vehicles],
     }
