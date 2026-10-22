@@ -1,7 +1,7 @@
 import random
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
-from itertools import pairwise
+from itertools import accumulate, pairwise
 
 from src.algorithms.base import Algorithm, HistoryRecord, SearchResult, Step
 from src.core.initial import random_state
@@ -154,9 +154,14 @@ class RandomRestart:
         best_index = max(range(len(results)), key=lambda index: results[index].history[-1].value)
         best = results[best_index]
         history, steps = stitch_trajectories(results, best)
+        starts = accumulate((result.iterations + 1 for result in results[:-1]), initial=0)
         extra = {
             "restarts": float(self.max_restart),
             "best_restart": float(best_index),
+            **{
+                f"start_iteration_restart_{index}": float(start)
+                for index, start in enumerate(starts)
+            },
             **{
                 f"iterations_restart_{index}": float(result.iterations)
                 for index, result in enumerate(results)
