@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">NEXt</title>
+  <rect x="1" y="1" width="126" height="126" rx="27" fill="#0A1A33" stroke="#1B3D6B" stroke-width="2"/>
+  <path d="M24 16H104M24 32H104M24 48H104M24 64H104M24 80H104M24 96H104M24 112H104M24 16V112M40 16V112M56 16V112M72 16V112M88 16V112M104 16V112" fill="none" stroke="#16355E" stroke-width="1"/>
+  <rect x="25" y="17" width="14" height="94" rx="4" fill="#60A5FA"/>
+  <rect x="89" y="17" width="14" height="94" rx="4" fill="#60A5FA"/>
+  <rect x="41" y="17" width="14" height="30" rx="4" fill="#FBBF24"/>
+  <rect x="57" y="49" width="14" height="30" rx="4" fill="#FBBF24"/>
+  <rect x="73" y="81" width="14" height="30" rx="4" fill="#FBBF24"/>
+</svg>
