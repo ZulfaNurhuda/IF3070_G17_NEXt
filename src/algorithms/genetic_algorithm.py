@@ -61,6 +61,10 @@ class GeneticAlgorithm:
     population_size: int = 50
     generations: int = 100
     mutation_rate: float = 0.3
+    # Sumber: elitisme (menyalin individu terbaik langsung ke generasi berikutnya) diadaptasi dari
+    #   skema survivor selection pada algoritma evolusioner.
+    #   A. E. Eiben and J. E. Smith, Introduction to Evolutionary Computing, 2nd ed.
+    #   Berlin, Germany: Springer, 2015.
     elitism_count: int = 2
 
     def __post_init__(self) -> None:
