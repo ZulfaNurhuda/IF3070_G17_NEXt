@@ -7,7 +7,7 @@ const OUTPUT_DIRECTORY = join(import.meta.dir, "..", "output");
 const PORT = Number(Bun.env.PORT ?? 3000);
 
 const FOLDERS = ["final", "scratch"];
-const SAFE_NAME = /^(?!.*\.\.)[\w.-]+\.json$/;
+const SAFE_NAME = /^(?!.*\.\.)[\w.=-]+\.json$/;
 const TIMESTAMP_IN_NAME = /_(\d+)\.json$/;
 
 async function createdAt(folder: string, name: string): Promise<string> {
