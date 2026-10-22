@@ -23,9 +23,10 @@ def acceptance_probability(delta: float, temperature: float) -> float:
     return math.exp(delta / temperature)
 
 
-# Sumber: skala suhu awal SA diadaptasi dari penetapan suhu berdasarkan rasio penerimaan awal.
+# Sumber: skala suhu awal SA diadaptasi dari penetapan suhu berdasarkan rasio penerimaan awal,
+#   yaitu rata-rata kenaikan biaya transisi buruk dibagi minus logaritma rasio penerimaan (eq. 7).
 #   W. Ben-Ameur, "Computing the initial temperature of simulated annealing,"
-#   Comput. Optim. Appl., vol. 29, no. 3, pp. 369-385, Dec. 2004,
+#   Comput. Optim. Appl., vol. 29, no. 3, pp. 369-385, Dec. 2004, p. 373,
 #   doi: 10.1023/B:COAP.0000044187.23143.BD.
 def temperature_scale(state: State, problem: Problem, rng: random.Random) -> tuple[float, int]:
     value = problem.value(state)
