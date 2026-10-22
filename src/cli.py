@@ -1,4 +1,5 @@
 import argparse
+import random
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -9,14 +10,27 @@ from src.algorithms.registry import REGISTRY, create_algorithm, parameter_types
 from src.core.objectives import DEFAULT_OBJECTIVE_NAME, OBJECTIVES
 from src.experiments.configs import OFFICIAL_EXPERIMENTS, RUNS_PER_CONFIGURATION
 from src.experiments.runner import execute_runs
+from src.storage.generation import (
+    DEFAULT_CAPACITY_RATIO,
+    DEFAULT_RANGES,
+    GenerationRequest,
+    generate_problem,
+    write_instance,
+)
 from src.storage.instance import load_problem
 from src.storage.results import write_experiment
+from src.storage.specification import ATTRIBUTE_KEYS, parse_range, parse_vehicle_specification
 
 PROJECT_ROOT: Final = Path(__file__).resolve().parent.parent
-DEFAULT_INSTANCE: Final = PROJECT_ROOT / "src" / "instances" / "default.json"
+INSTANCES_DIRECTORY: Final = PROJECT_ROOT / "src" / "instances"
+DEFAULT_INSTANCE: Final = INSTANCES_DIRECTORY / "default.json"
 OUTPUT_ROOT: Final = PROJECT_ROOT / "output"
 DEFAULT_RUNS: Final = 3
 DEFAULT_SEED: Final = 0
+DEFAULT_SHIP_WIDTH: Final = 10
+DEFAULT_SHIP_LENGTH: Final = 20
+DEFAULT_RANDOM_VEHICLES: Final = 25
+USAGE_EXAMPLE_ALGORITHM: Final = "steepest-ascent"
 DEFAULT_OUTPUT: Final = "scratch"
 FINAL_OUTPUT: Final = "final"
 OUTPUT_FOLDERS: Final = (DEFAULT_OUTPUT, FINAL_OUTPUT)
@@ -70,7 +84,24 @@ def build_parser() -> argparse.ArgumentParser:
             "--objective", choices=sorted(OBJECTIVES), default=DEFAULT_OBJECTIVE_NAME
         )
         command.add_argument("--seed", type=int, default=DEFAULT_SEED)
+
+    generate = commands.add_parser("generate", help="buat instance JSON baru di src/instances")
+    generate.add_argument("--name", required=True)
+    generate.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    generate.add_argument("--ship-width", type=int, default=DEFAULT_SHIP_WIDTH)
+    generate.add_argument("--ship-length", type=int, default=DEFAULT_SHIP_LENGTH)
+    capacity = generate.add_mutually_exclusive_group()
+    capacity.add_argument("--capacity", type=int)
+    capacity.add_argument("--capacity-ratio", type=float, default=DEFAULT_CAPACITY_RATIO)
+    generate.add_argument("--vehicles", type=int, default=DEFAULT_RANDOM_VEHICLES)
+    for key in ATTRIBUTE_KEYS:
+        generate.add_argument(vehicle_flag(key), dest=f"vehicle_{key}", metavar="N|RENDAH:TINGGI")
+    generate.add_argument("--vehicle", action="append", default=[], metavar="NAMA=NILAI,...")
     return parser
+
+
+def vehicle_flag(key: str) -> str:
+    return f"--vehicle-{key.replace('_', '-')}"
 
 
 def run_command(arguments: argparse.Namespace) -> None:
@@ -91,11 +122,48 @@ def run_all_command(arguments: argparse.Namespace) -> None:
         print(f"[{number}/{total}] {config.name} -> {path}", flush=True)
 
 
+def generate_command(arguments: argparse.Namespace) -> None:
+    overrides = {
+        key: parse_range(text, vehicle_flag(key))
+        for key in ATTRIBUTE_KEYS
+        if (text := getattr(arguments, f"vehicle_{key}")) is not None
+    }
+    request = GenerationRequest(
+        ship_width=arguments.ship_width,
+        ship_length=arguments.ship_length,
+        capacity=arguments.capacity,
+        capacity_ratio=arguments.capacity_ratio,
+        random_count=arguments.vehicles,
+        ranges={**DEFAULT_RANGES, **overrides},
+        specifications=tuple(
+            parse_vehicle_specification(text, index)
+            for index, text in enumerate(arguments.vehicle, start=1)
+        ),
+    )
+    payload = generate_problem(request, random.Random(arguments.seed))
+    path = write_instance(payload, INSTANCES_DIRECTORY, arguments.name).relative_to(PROJECT_ROOT)
+    ship = payload["ship"]
+    print(
+        f"Instance dibuat: {path.as_posix()} ({len(payload['vehicles'])} kendaraan, "
+        f"kapal {ship['width']}x{ship['length']}, kapasitas {ship['max_capacity']})"
+    )
+    print(
+        f"Untuk menggunakan instance ini, tambahkan --instance {path.as_posix()} "
+        "pada perintah run atau run-all, misalnya:"
+    )
+    print(
+        f"  python -m src.cli run --algorithm {USAGE_EXAMPLE_ALGORITHM} "
+        f"--instance {path.as_posix()} --runs {DEFAULT_RUNS} --seed 1 --out {DEFAULT_OUTPUT}"
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
     try:
         if arguments.command == "run":
             run_command(arguments)
+        elif arguments.command == "generate":
+            generate_command(arguments)
         else:
             run_all_command(arguments)
     except ValueError as error:
