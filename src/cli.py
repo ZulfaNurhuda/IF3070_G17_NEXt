@@ -18,6 +18,7 @@ from src.storage.generation import (
     write_instance,
 )
 from src.storage.instance import load_problem
+from src.storage.naming import experiment_prefix
 from src.storage.results import write_experiment
 from src.storage.specification import ATTRIBUTE_KEYS, parse_range, parse_vehicle_specification
 
@@ -109,7 +110,8 @@ def run_command(arguments: argparse.Namespace) -> None:
     algorithm = create_algorithm(arguments.algorithm, parameters)
     problem = load_problem(arguments.instance, arguments.objective)
     experiment = execute_runs(problem, algorithm, arguments.runs, arguments.seed)
-    print(write_experiment(experiment, OUTPUT_ROOT / arguments.out, arguments.algorithm))
+    prefix = experiment_prefix(experiment)
+    print(write_experiment(experiment, OUTPUT_ROOT / arguments.out, prefix))
 
 
 def run_all_command(arguments: argparse.Namespace) -> None:
@@ -118,8 +120,9 @@ def run_all_command(arguments: argparse.Namespace) -> None:
     for number, config in enumerate(OFFICIAL_EXPERIMENTS, start=1):
         algorithm = create_algorithm(config.algorithm, config.parameters)
         experiment = execute_runs(problem, algorithm, RUNS_PER_CONFIGURATION, arguments.seed)
-        path = write_experiment(experiment, OUTPUT_ROOT / FINAL_OUTPUT, config.name)
-        print(f"[{number}/{total}] {config.name} -> {path}", flush=True)
+        prefix = experiment_prefix(experiment)
+        path = write_experiment(experiment, OUTPUT_ROOT / FINAL_OUTPUT, prefix)
+        print(f"[{number}/{total}] {path}", flush=True)
 
 
 def generate_command(arguments: argparse.Namespace) -> None:
