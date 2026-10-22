@@ -5,6 +5,8 @@ from typing import Final
 
 ATTRIBUTE_KEYS: Final = ("width", "length", "shipping_fee", "weight", "eta")
 IDENTIFIER_KEY: Final = "id"
+INFINITY: Final = "inf"
+SEED_CEILING: Final = 2**31 - 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,15 +24,29 @@ class VehicleSpecification:
     ranges: Mapping[str, IntegerRange]
 
 
-def parse_range(text: str, owner: str) -> IntegerRange:
+def parse_range(
+    text: str, owner: str, minimum: int = 1, infinity: int | None = None
+) -> IntegerRange:
     low_text, separator, high_text = text.partition(":")
+    unbounded = separator != "" and high_text == INFINITY
     try:
         low = int(low_text)
-        high = int(high_text) if separator else low
+        high = int(high_text) if separator and not unbounded else low
     except ValueError:
-        raise ValueError(f"{owner}: '{text}' harus berbentuk n atau rendah:tinggi") from None
-    if low <= 0 or high < low:
-        raise ValueError(f"{owner}: '{text}' harus bilangan bulat positif dengan rendah <= tinggi")
+        raise ValueError(
+            f"{owner}: '{text}' harus berbentuk n, rendah:tinggi, atau rendah:inf"
+        ) from None
+    if unbounded:
+        if infinity is None:
+            raise ValueError(
+                f"{owner}: '{text}' memakai inf, tetapi tidak ada batas atas yang masuk akal "
+                "di sini; tulis angka"
+            )
+        high = infinity
+    if low < minimum or high < low:
+        raise ValueError(
+            f"{owner}: '{text}' harus bilangan bulat >= {minimum} dengan rendah <= tinggi"
+        )
     return IntegerRange(low, high)
 
 
